@@ -27,7 +27,7 @@ val Screen.shouldShowNavigator get() =
         Screen.PuzzleResolver,
         Screen.AddPuzzle,
         Screen.Unknown,
-        Screen.Signing,
+        Screen.SignIn,
         Screen.Signup -> false
     }
 

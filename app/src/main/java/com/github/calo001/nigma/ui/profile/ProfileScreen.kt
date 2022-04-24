@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Button
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,9 +17,13 @@ import androidx.compose.ui.unit.dp
 import com.github.calo001.nigma.R
 import com.github.calo001.nigma.ui.add.EditableTextField
 import com.github.calo001.nigma.ui.basic.ProfileUserImage
+import io.appwrite.models.User
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    onLogout: () -> Unit,
+    sessionInfo: User?,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -32,13 +38,21 @@ fun ProfileScreen() {
                 .padding(vertical = 24.dp)
                 .size(180.dp)
         )
-        EditableTextField(text = "Tomas", onChange = {})
-        EditableTextField(text = "Tomas@hotmai.com", onChange = {})
+        EditableTextField(text = sessionInfo?.name ?: "", onChange = {})
+        EditableTextField(text = sessionInfo?.email ?: "", onChange = {})
+        LogoutButton(onLogout = onLogout)
+    }
+}
+
+@Composable
+fun LogoutButton(onLogout: () -> Unit) {
+    Button(onClick = onLogout) {
+        Text(text = "Logout")
     }
 }
 
 @Preview(showSystemUi = true)
 @Composable
 fun ProfileScreenPreview() {
-    ProfileScreen()
+    ProfileScreen(onLogout = {}, sessionInfo = null)
 }

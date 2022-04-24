@@ -3,13 +3,14 @@ package com.github.calo001.nigma
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,9 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.github.calo001.nigma.router.shouldShowAddFab
 import com.github.calo001.nigma.ui.basic.ScaffoldOver
+import com.github.calo001.nigma.viewModel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
 @OptIn(ExperimentalAnimationApi::class)
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -88,11 +94,12 @@ class MainActivity : ComponentActivity() {
                     Surface(
                         color = MaterialTheme.colors.background,
                         contentColor = contentColorFor(MaterialTheme.colors.surface),
-                        modifier = Modifier
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         Router(
                             navController = navController,
-                            startDestination = Screen.Signing.route,
+                            startDestination = Screen.SignIn.route,
+                            viewModel = viewModel,
                             onNavigate = { screen ->
                                 if (screen is Screen.Main) {
                                     navigator.navigateHome()

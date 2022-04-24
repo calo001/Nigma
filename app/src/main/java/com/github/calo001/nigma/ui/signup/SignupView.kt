@@ -3,7 +3,7 @@ package com.github.calo001.nigma.ui.signup
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -12,12 +12,26 @@ import androidx.compose.ui.unit.dp
 import com.github.calo001.nigma.R
 import com.github.calo001.nigma.ui.theme.NigmaTheme
 import com.github.calo001.nigma.view.Screen
+import com.github.calo001.nigma.viewModel.SignUpStatus
+
+typealias Email = String
+typealias Password = String
+typealias Username = String
 
 @Composable
 fun SingUpScreen(
     modifier: Modifier = Modifier,
-    onNavigate: (Screen) -> Unit
+    onNavigate: (Screen) -> Unit,
+    onSignupRequest: (Email, Password, Username) -> Unit,
+    status: SignUpStatus,
 ) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var showEmailError by remember { mutableStateOf(false) }
+    var showPasswordError by remember { mutableStateOf(false) }
+    var showUsernameError by remember { mutableStateOf(false) }
+
     Column(
         verticalArrangement = Arrangement.SpaceAround,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -34,32 +48,51 @@ fun SingUpScreen(
         )
         Column {
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = username,
+                onValueChange = { username = it },
                 label = {
-                    Text(text = "Email")
+                    Text(text = "Username")
                 },
+                isError = showUsernameError,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = email,
+                onValueChange = { email = it },
+                label = {
+                    Text(text = "Email")
+                },
+                isError = showEmailError,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
                 label = {
                     Text(text = "Password")
                 },
+                isError = showPasswordError,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         Column {
             Button(
-                onClick = { onNavigate(Screen.Main) },
+                onClick = {
+                    showUsernameError = username.isEmpty()
+                    showEmailError = email.isEmpty()
+                    showPasswordError = password.isEmpty()
+
+                    if (email.isNotEmpty() and password.isNotEmpty() and username.isNotEmpty()) {
+                        onSignupRequest(email, password, username)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Signup")
             }
             TextButton(
                 onClick = {
-                    onNavigate(Screen.Signing)
+
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -71,8 +104,10 @@ fun SingUpScreen(
 
 @Preview(showSystemUi = true)
 @Composable
-fun SingingScreenPreview() {
+fun SingupScreenPreview() {
     NigmaTheme {
-        SingUpScreen(Modifier, {})
+        SingUpScreen(Modifier, {}, { email, password, username ->
+
+        }, SignUpStatus.Idle)
     }
 }

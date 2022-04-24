@@ -9,7 +9,7 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object AddPuzzle: Screen(route = "add", icon = Icons.Filled.Add)
     object Profile: Screen(route = "profile", icon = Icons.Filled.AccountCircle)
     object PuzzleResolver: Screen(route = "puzzle", icon = Icons.Filled.SquareFoot)
-    object Signing: Screen(route = "signing", icon = Icons.Filled.AccountCircle)
+    object SignIn: Screen(route = "signIn", icon = Icons.Filled.AccountCircle)
     object Signup: Screen(route = "signup", icon = Icons.Filled.AccountCircle)
     object Unknown: Screen(route = "unknown", icon = Icons.Filled.Circle)
 
@@ -20,7 +20,7 @@ sealed class Screen(val route: String, val icon: ImageVector) {
                 AddPuzzle.route -> AddPuzzle
                 Profile.route -> Profile
                 PuzzleResolver.route -> PuzzleResolver
-                Signing.route -> Signing
+                SignIn.route -> SignIn
                 Signup.route -> Signup
                 else -> Unknown
             }
