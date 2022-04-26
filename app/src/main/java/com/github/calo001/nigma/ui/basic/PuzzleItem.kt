@@ -1,5 +1,7 @@
 package com.github.calo001.nigma.ui.basic
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -7,26 +9,35 @@ import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.github.calo001.nigma.R
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.ui.theme.NigmaTheme
+import com.github.calo001.nigma.util.split
+import java.nio.ByteBuffer
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun PuzzleItem(
+    modifier: Modifier = Modifier,
     puzzle: PuzzleView,
     onClickPuzzle: () -> Unit,
 ) {
-    Row {
+    Row (
+        modifier = modifier
+    ){
         UserImageProfile(
             puzzle = puzzle,
             modifier = Modifier.size(50.dp)
@@ -51,9 +62,31 @@ private fun PuzzleImage(
         onClick = onClickPuzzle,
         modifier = modifier
     ) {
+        val context = LocalContext.current
         Box {
+            var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+            DisposableEffect(
+                key1 = puzzle.puzzleImage
+            ) {
+                val imageLoader = ImageLoader(context)
+                val request = ImageRequest.Builder(context)
+                    .data(ByteBuffer.wrap(puzzle.puzzleImage))
+                    .crossfade(true)
+                    .error(R.drawable.ic_logo)
+                    .target { drawable ->
+                        bitmap = drawable.toBitmap()
+                    }
+                    .allowConversionToBitmap(true)
+                    .build()
+                imageLoader.enqueue(request)
+
+                onDispose {
+                    imageLoader.shutdown()
+                }
+            }
+
             AsyncImage(
-                model = puzzle.puzzleImageUrl,
+                model = bitmap,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.height(300.dp)
@@ -115,14 +148,15 @@ fun ProfileUserImage(
 fun PuzzleItemPreview() {
     NigmaTheme {
         PuzzleItem(
-            PuzzleView(
+            puzzle = PuzzleView(
                 id = "01",
                 username = "Pepe",
                 userImageProfileUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8dXNlcnxlbnwwfHwwfHw%3D&w=1000&q=80",
-                puzzleImageUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8dXNlcnxlbnwwfHwwfHw%3D&w=1000&q=80",
+                puzzleImage = ByteArray(255),
+                puzzleName = "Name",
                 gridSize = 3,
-                puzzleName = "Name"
-            ), onClickPuzzle = {}
+            ),
+            onClickPuzzle = {}
         )
     }
 }

@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Database
+import io.appwrite.services.Realtime
 import io.appwrite.services.Storage
 import javax.inject.Singleton
 
@@ -33,4 +34,8 @@ object AppWriteClient {
     @Singleton
     @Provides
     fun getDatabase(client: Client) = Database(client)
+
+    @Singleton
+    @Provides
+    fun getRealtime(client: Client) = Realtime(client)
 }

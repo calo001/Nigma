@@ -37,6 +37,7 @@ import com.github.calo001.nigma.ui.resolver.dragndrop.DropTarget
 import com.github.calo001.nigma.ui.resolver.dragndrop.LongPressDraggable
 import com.github.calo001.nigma.util.split
 import com.github.calo001.nigma.view.Screen
+import java.nio.ByteBuffer
 
 @Composable
 fun PuzzleResolver(
@@ -124,11 +125,11 @@ private fun PuzzleContent(
     var bitmaps by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     val context = LocalContext.current
     DisposableEffect(
-        key1 = puzzleView.puzzleImageUrl, key2 = puzzleView.gridSize
+        key1 = puzzleView.puzzleImage, key2 = puzzleView.gridSize
     ) {
         val imageLoader = ImageLoader(context)
         val request = ImageRequest.Builder(context)
-            .data(puzzleView.puzzleImageUrl)
+            .data(ByteBuffer.wrap(puzzleView.puzzleImage))
             .crossfade(true)
             .error(R.drawable.ic_logo)
             .target { drawable ->

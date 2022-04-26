@@ -1,5 +1,6 @@
 package com.github.calo001.nigma.ui.main
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.CircularProgressIndicator
@@ -15,6 +16,7 @@ import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.ui.states.PuzzleListState
 import com.github.calo001.nigma.view.Screen
 
+@ExperimentalFoundationApi
 @Composable
 fun MainScreen(
     puzzleListState: PuzzleListState,
@@ -28,32 +30,62 @@ fun MainScreen(
                 Text(text = "Error")
             }
         }
-        PuzzleListState.Loading -> {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                CircularProgressIndicator()
+        is PuzzleListState.Loading -> {
+            if (puzzleListState.list.isEmpty()) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                PuzzlesListContent(
+                    username = username,
+                    puzzleList = puzzleListState.list,
+                    onClickPuzzle = onClickPuzzle
+                )
             }
         }
         is PuzzleListState.Success -> {
-            LazyColumn(
-                contentPadding = PaddingValues(8.dp),
+            PuzzlesListContent(
+                username = username,
+                puzzleList = puzzleListState.list,
+                onClickPuzzle = onClickPuzzle
+            )
+        }
+    }
+}
+
+@ExperimentalFoundationApi
+@Composable
+private fun PuzzlesListContent(
+    username: String,
+    puzzleList: List<PuzzleView>,
+    onClickPuzzle: (PuzzleView) -> Unit
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(8.dp),
+    ) {
+        item {
+            Greetings(username)
+        }
+        items(
+            count = puzzleList.size,
+            key = { puzzleList[it].id }
+        ) { index ->
+            Column(
+                modifier = Modifier
+                    .animateItemPlacement()
             ) {
-                item {
-                    Greetings(username)
-                }
-                items(puzzleListState.list.size) { index ->
-                    PuzzleItem(
-                        puzzle = puzzleListState.list[index],
-                        onClickPuzzle = { onClickPuzzle(puzzleListState.list[index]) }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                item {
-                    Spacer(modifier = Modifier.height(100.dp))
-                }
+                PuzzleItem(
+                    puzzle = puzzleList[index],
+                    onClickPuzzle = { onClickPuzzle(puzzleList[index]) },
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+        item {
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }

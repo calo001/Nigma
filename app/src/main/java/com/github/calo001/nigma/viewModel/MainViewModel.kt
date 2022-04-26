@@ -1,5 +1,6 @@
 package com.github.calo001.nigma.viewModel
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.calo001.nigma.interactor.*
@@ -20,8 +21,9 @@ class MainViewModel @Inject constructor(
     private val currentSessionInteractor: CurrentSessionInteractor,
     private val logoutInteractor: LogoutInteractor,
     private val uploadPuzzleInteractor: UploadPuzzleInteractor,
+    private val realtimePuzzles: RealtimePuzzles,
 ): ViewModel() {
-    private val _puzzleListState = MutableStateFlow<PuzzleListState>(PuzzleListState.Loading)
+    private val _puzzleListState = MutableStateFlow<PuzzleListState>(PuzzleListState.Loading(emptyList()))
     val puzzleListState: StateFlow<PuzzleListState> get() = _puzzleListState
 
     private val _puzzleSelected = MutableStateFlow<PuzzleView?>(null)
@@ -36,12 +38,44 @@ class MainViewModel @Inject constructor(
     private val _puzzleCreator = MutableStateFlow<AddPuzzleStatus>(AddPuzzleStatus.Building(Puzzle.default))
     val puzzleCreator: StateFlow<AddPuzzleStatus> get() = _puzzleCreator
 
-    init {
-        _puzzleListState.tryEmit(PuzzleListState.Success(listPuzzles))
-    }
-
     fun getPuzzleById(puzzle: PuzzleView) {
         _puzzleSelected.tryEmit(puzzle)
+    }
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            sessionStatus.collect { session ->
+                if (session is SessionStatus.SessionStarted) {
+                    fetchPuzzleList()
+                    initRealtime()
+                }
+            }
+        }
+    }
+    private suspend fun initRealtime() {
+        realtimePuzzles.subscribeRealtime()
+            .collect {
+                fetchPuzzleList()
+            }
+    }
+
+    private suspend fun fetchPuzzleList() {
+        _puzzleListState.tryEmit(PuzzleListState.Loading(
+            when (_puzzleListState.value) {
+                PuzzleListState.Error -> emptyList()
+                is PuzzleListState.Loading -> (_puzzleListState.value as PuzzleListState.Loading).list
+                is PuzzleListState.Success -> (_puzzleListState.value as PuzzleListState.Success).list
+            }
+        ))
+        val result = realtimePuzzles.getPuzzleList()
+        when {
+            result.isSuccess -> {
+                _puzzleListState.tryEmit(PuzzleListState.Success(result.getOrNull() ?: emptyList()))
+            }
+            result.isFailure -> {
+                _puzzleListState.tryEmit(PuzzleListState.Error)
+            }
+        }
     }
 
     fun createUser(username: String, email: String, password: String) = viewModelScope.launch {
@@ -136,22 +170,3 @@ class MainViewModel @Inject constructor(
         _puzzleCreator.tryEmit(AddPuzzleStatus.Building(Puzzle.default))
     }
 }
-
-val listPuzzles = listOf(
-    PuzzleView(
-        id = "001",
-        username = "Pepe",
-        userImageProfileUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8dXNlcnxlbnwwfHwwfHw%3D&w=1000&q=80",
-        puzzleImageUrl = "https://pbs.twimg.com/profile_images/1364932022926458886/BxwXy9N8_400x400.jpg",
-        gridSize = 3,
-        puzzleName = "Name 01"
-    ),
-    PuzzleView(
-        id = "002",
-        username = "Pepe",
-        userImageProfileUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8dXNlcnxlbnwwfHwwfHw%3D&w=1000&q=80",
-        puzzleImageUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8dXNlcnxlbnwwfHwwfHw%3D&w=1000&q=80",
-        gridSize = 3,
-        puzzleName = "Name 02"
-    )
-)
