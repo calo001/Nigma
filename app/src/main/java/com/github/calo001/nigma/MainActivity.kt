@@ -43,20 +43,23 @@ class MainActivity : ComponentActivity() {
             val navController = rememberAnimatedNavController()
             val navigator = remember { Navigator(navController) }
 
+            val currentRoute = Screen.fromString(navController.currentDestination?.route)
+            var showBottomBar by rememberSaveable { mutableStateOf(currentRoute.shouldShowNavigator) }
+            var showAddFab by rememberSaveable { mutableStateOf(currentRoute.shouldShowAddFab) }
+            var currentScreen by remember { mutableStateOf<Screen>(Screen.SignIn) }
+
             NigmaTheme {
                 ScaffoldOver(
                     bottomBar = {
-                        val currentRoute = Screen.fromString(navController.currentDestination?.route)
-                        var showBottomBar by rememberSaveable { mutableStateOf(currentRoute.shouldShowNavigator) }
-                        var showAddFab by rememberSaveable { mutableStateOf(currentRoute.shouldShowAddFab) }
-
                         navController.addOnDestinationChangedListener { controller, destination, args ->
                             showBottomBar = Screen.fromString(destination.route).shouldShowNavigator
                             showAddFab = Screen.fromString(destination.route).shouldShowAddFab
+                            currentScreen = Screen.fromString(destination.route)
                         }
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
                         ) {
                             AnimatedVisibility(
                                 visible = showBottomBar,
@@ -64,7 +67,8 @@ class MainActivity : ComponentActivity() {
                                 exit = scaleOut(),
                             ) {
                                 BottomBar(
-                                    onNavigate = { screen ->  navigator.navigate(screen) }
+                                    onNavigate = { screen ->  navigator.navigate(screen) },
+                                    selected = currentScreen
                                 )
                             }
                             AnimatedVisibility(
@@ -74,9 +78,13 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Box(modifier = Modifier
                                     .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
                                 ) {
                                     FloatingActionButton(
-                                        onClick = { /*TODO*/ },
+                                        onClick = {
+                                             viewModel.uploadPuzzle()
+                                        },
+                                        shape = MaterialTheme.shapes.small,
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
                                             .padding(16.dp)
@@ -98,7 +106,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Router(
                             navController = navController,
-                            startDestination = Screen.SignIn.route,
+                            startDestination = currentScreen.route,
                             viewModel = viewModel,
                             onNavigate = { screen ->
                                 if (screen is Screen.Main) {

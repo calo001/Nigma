@@ -1,20 +1,18 @@
 package com.github.calo001.nigma.router
 
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.github.calo001.nigma.ui.add.AddScreen
 import com.github.calo001.nigma.ui.main.MainScreen
 import com.github.calo001.nigma.ui.profile.ProfileScreen
@@ -22,12 +20,17 @@ import com.github.calo001.nigma.ui.resolver.PuzzleResolver
 import com.github.calo001.nigma.ui.signing.SingInScreen
 import com.github.calo001.nigma.ui.signup.SingUpScreen
 import com.github.calo001.nigma.view.Screen
+import com.github.calo001.nigma.viewModel.AddPuzzleStatus
 import com.github.calo001.nigma.viewModel.MainViewModel
+import com.github.calo001.nigma.viewModel.Puzzle
 import com.github.calo001.nigma.viewModel.SessionStatus
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun Router(
     navController: NavHostController,
@@ -160,10 +163,72 @@ fun Router(
             popEnterTransition = defaultPopEnter,
             popExitTransition = defaultPopExit,
         ) {
-            AddScreen(
-                modifier = Modifier.padding(16.dp),
-                onNavigate = onNavigate,
+            val puzzleStatus by viewModel.puzzleCreator.collectAsState()
+            val puzzle = when (puzzleStatus) {
+                is AddPuzzleStatus.Building -> (puzzleStatus as AddPuzzleStatus.Building).puzzle
+                AddPuzzleStatus.Success -> Puzzle.default
+                is AddPuzzleStatus.Uploading -> (puzzleStatus as AddPuzzleStatus.Uploading).puzzle
+                AddPuzzleStatus.Error -> Puzzle.default
+            }
+
+            val externalStoragePermissionState = rememberPermissionState(
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
+
+            when (externalStoragePermissionState.status) {
+                PermissionStatus.Granted -> AddScreen(
+                    puzzleStatus = puzzleStatus,
+                    onNavigate = onNavigate,
+                    puzzleName = puzzle.name,
+                    puzzleDescription = puzzle.description,
+                    bitmap = puzzle.imgBitmap,
+                    onImageCaptured = { bitmap, fileName ->
+                        viewModel.updatePuzzleCreator(puzzle.copy(imgBitmap = bitmap, fileName = fileName))
+                    },
+                    onNameChange = { name ->
+                        viewModel.updatePuzzleCreator(puzzle.copy(name = name))
+                    },
+                    onDescriptionChange = { description ->
+                        viewModel.updatePuzzleCreator(puzzle.copy(description = description))
+                    },
+                    modifier = Modifier.padding(16.dp),
+                    onReset = {
+                        viewModel.resetPuzzleCreator()
+                    }
+                )
+                is PermissionStatus.Denied -> {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+
+                        val composition by rememberLottieComposition(
+                            LottieCompositionSpec.RawRes(
+                                com.github.calo001.nigma.R.raw.upload_files
+                            )
+                        )
+                        LottieAnimation(
+                            composition = composition,
+                            modifier = Modifier.size(300.dp)
+                        )
+
+                        Button(onClick = {
+                            onNavigate(Screen.Main)
+                        }) {
+                            Text(text = "Don't allow access files")
+                        }
+
+                        Button(onClick = {
+                            externalStoragePermissionState.launchPermissionRequest()
+                        }) {
+                            Text(text = "Allow access files")
+                        }
+                    }
+                }
+            }
+
+
         }
 
         composable(

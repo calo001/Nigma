@@ -8,6 +8,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.appwrite.Client
 import io.appwrite.services.Account
+import io.appwrite.services.Database
+import io.appwrite.services.Storage
 import javax.inject.Singleton
 
 @Module
@@ -23,4 +25,12 @@ object AppWriteClient {
     @Singleton
     @Provides
     fun getAccountAppWrite(client: Client) = Account(client)
+
+    @Singleton
+    @Provides
+    fun getStorage(client: Client) = Storage(client)
+
+    @Singleton
+    @Provides
+    fun getDatabase(client: Client) = Database(client)
 }

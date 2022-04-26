@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.request.ImageRequest
 import com.github.calo001.nigma.ui.add.CloseButton
@@ -101,7 +102,7 @@ private fun PuzzleGroup(
             )
             Text(
                 text = "Title",
-                style = MaterialTheme.typography.h5,
+                style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

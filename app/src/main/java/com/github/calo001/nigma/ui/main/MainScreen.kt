@@ -8,6 +8,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.calo001.nigma.ui.basic.PuzzleItem
 import com.github.calo001.nigma.ui.model.PuzzleView
@@ -70,7 +71,7 @@ fun Greetings(username: String) {
          )
         Text(
             text = username,
-            style = MaterialTheme.typography.h4
+            style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold)
         )
     }
 }

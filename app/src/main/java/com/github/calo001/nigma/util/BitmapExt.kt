@@ -1,6 +1,10 @@
 package com.github.calo001.nigma.util
 
 import android.graphics.Bitmap
+import android.os.Environment
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 
 fun Bitmap.split(xCount: Int, yCount: Int): Array<Array<Bitmap?>> {
     // Allocate a two dimensional array to hold the individual images.
@@ -22,4 +26,28 @@ fun Bitmap.split(xCount: Int, yCount: Int): Array<Array<Bitmap?>> {
     }
     // Return the array
     return bitmaps
+}
+
+fun Bitmap.toFile(fileNameToSave: String): File? { // File name like "image.png"
+    //create a file to write bitmap data
+    var file: File? = null
+    return try {
+        file = File(Environment.getExternalStorageDirectory().toString() + File.separator + fileNameToSave)
+        file.createNewFile()
+
+        //Convert bitmap to byte array
+        val bos = ByteArrayOutputStream()
+        this.compress(Bitmap.CompressFormat.PNG, 0, bos) // YOU can also save it in JPEG
+        val bitmapdata = bos.toByteArray()
+
+        //write the bytes in file
+        val fos = FileOutputStream(file)
+        fos.write(bitmapdata)
+        fos.flush()
+        fos.close()
+        file
+    } catch (e: Exception) {
+        e.printStackTrace()
+        file // it will return null
+    }
 }
