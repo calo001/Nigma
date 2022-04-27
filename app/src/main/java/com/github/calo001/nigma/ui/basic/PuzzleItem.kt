@@ -155,6 +155,8 @@ fun PuzzleItemPreview() {
                 puzzleImage = ByteArray(255),
                 puzzleName = "Name",
                 gridSize = 3,
+                resolvedBy = emptyList(),
+                description = "",
             ),
             onClickPuzzle = {}
         )

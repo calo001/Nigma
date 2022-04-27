@@ -1,6 +1,5 @@
 package com.github.calo001.nigma.viewModel
 
-import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.calo001.nigma.interactor.*
@@ -21,7 +20,8 @@ class MainViewModel @Inject constructor(
     private val currentSessionInteractor: CurrentSessionInteractor,
     private val logoutInteractor: LogoutInteractor,
     private val uploadPuzzleInteractor: UploadPuzzleInteractor,
-    private val realtimePuzzles: RealtimePuzzles,
+    private val realtimePuzzlesInteractor: RealtimePuzzlesInteractor,
+    private val puzzleResolvedInteractor: PuzzleResolvedInteractor,
 ): ViewModel() {
     private val _puzzleListState = MutableStateFlow<PuzzleListState>(PuzzleListState.Loading(emptyList()))
     val puzzleListState: StateFlow<PuzzleListState> get() = _puzzleListState
@@ -53,7 +53,7 @@ class MainViewModel @Inject constructor(
         }
     }
     private suspend fun initRealtime() {
-        realtimePuzzles.subscribeRealtime()
+        realtimePuzzlesInteractor.subscribeRealtime()
             .collect {
                 fetchPuzzleList()
             }
@@ -67,7 +67,7 @@ class MainViewModel @Inject constructor(
                 is PuzzleListState.Success -> (_puzzleListState.value as PuzzleListState.Success).list
             }
         ))
-        val result = realtimePuzzles.getPuzzleList()
+        val result = realtimePuzzlesInteractor.getPuzzleList()
         when {
             result.isSuccess -> {
                 _puzzleListState.tryEmit(PuzzleListState.Success(result.getOrNull() ?: emptyList()))
@@ -168,5 +168,23 @@ class MainViewModel @Inject constructor(
 
     fun resetPuzzleCreator() {
         _puzzleCreator.tryEmit(AddPuzzleStatus.Building(Puzzle.default))
+    }
+
+    fun onPuzzleResolved(puzzleView: PuzzleView) = viewModelScope.launch(Dispatchers.IO) {
+        _sessionStatus.firstOrNull()?.let { session ->
+            when (session) {
+                SessionStatus.Error,
+                SessionStatus.Idle,
+                SessionStatus.Loading,
+                SessionStatus.LoggedOut,
+                SessionStatus.SignInSuccess -> Unit
+                is SessionStatus.SessionStarted -> {
+                    puzzleResolvedInteractor.updatePuzzleItem(
+                        puzzleView = puzzleView,
+                        userId = session.user.id,
+                    )
+                }
+            }
+        }
     }
 }

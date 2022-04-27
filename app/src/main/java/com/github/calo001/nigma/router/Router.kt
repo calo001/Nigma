@@ -3,6 +3,7 @@ package com.github.calo001.nigma.router
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
@@ -40,6 +41,7 @@ fun Router(
     onNavigate: (Screen) -> Unit,
     viewModel: MainViewModel,
 ) {
+    val state = rememberLazyListState()
     AnimatedNavHost(
         navController = navController,
         startDestination = startDestination
@@ -67,8 +69,10 @@ fun Router(
                     Column(modifier = Modifier.fillMaxSize()) {
                         MainScreen(
                             puzzleListState = listPuzzles,
-                            username = "Toño",
+                            username = (sessionStatus as SessionStatus.SessionStarted).user.name,
                             onNavigate = onNavigate,
+                            userId = (sessionStatus as SessionStatus.SessionStarted).user.id,
+                            state = state,
                             onClickPuzzle = { puzzle ->
                                 viewModel.getPuzzleById(puzzle)
                                 onNavigate(Screen.PuzzleResolver)
@@ -277,6 +281,9 @@ fun Router(
                 PuzzleResolver(
                     puzzleView = puzzleView,
                     onNavigate = onNavigate,
+                    onPuzzleResolved = {
+                        viewModel.onPuzzleResolved(puzzleView)
+                    }
                 )
             }
         }

@@ -44,6 +44,7 @@ fun PuzzleResolver(
     modifier: Modifier = Modifier,
     puzzleView: PuzzleView,
     onNavigate: (Screen) -> Unit,
+    onPuzzleResolved: () -> Unit,
 ) {
     var showCongratulations by remember { mutableStateOf(false) }
 
@@ -53,6 +54,7 @@ fun PuzzleResolver(
             puzzleView = puzzleView,
             onPuzzleResolved = {
                 showCongratulations = true
+                onPuzzleResolved()
             },
             onNavigate = onNavigate,
         )
@@ -68,7 +70,8 @@ fun PuzzleResolver(
                 val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.congratulation_success_batch))
                 LottieAnimation(
                     composition = composition,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
+                    iterations = Int.MAX_VALUE,
                 )
                 Button(onClick = {
                     onNavigate(Screen.Main)

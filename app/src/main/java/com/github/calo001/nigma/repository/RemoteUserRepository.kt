@@ -127,13 +127,18 @@ class RemoteUserRepository @Inject constructor(
                     val bitArrayImg = storage.getFileDownload("puzzles-imgs",
                         document.data["img_file_id"] as String
                     )
+                    val resolvedBy: List<String> = (document.data["puzzles_completed"] as List<*>).mapNotNull {
+                        it.toString()
+                    }
                     PuzzleView(
                         id = document.data["\$id"] as String,
                         username = "",
                         userImageProfileUrl = "",
                         puzzleImage = bitArrayImg,
                         gridSize = 3,
-                        puzzleName = document.data["name"] as String
+                        puzzleName = document.data["name"] as String,
+                        resolvedBy = resolvedBy,
+                        description = document.data["description"] as String,
                     )
                 }
             Result.success(list)
@@ -142,7 +147,32 @@ class RemoteUserRepository @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
 
-
+    suspend fun updatePuzzleItem(puzzle: PuzzleView, userId: String): Result<Any> {
+        return try {
+            val lastUpdatedPuzzle = database.getDocument(
+                collectionId = "puzzle-collection",
+                documentId = puzzle.id,
+            )
+            val resolvedBy: List<String> = (lastUpdatedPuzzle.data["puzzles_completed"] as List<*>).mapNotNull {
+                it.toString()
+            }
+            database.updateDocument(
+                collectionId = "puzzle-collection",
+                documentId = puzzle.id,
+                data = mapOf(
+                    "name" to puzzle.puzzleName,
+                    "description" to puzzle.description,
+                    "img_file_id" to puzzle.userImageProfileUrl,
+                    "puzzles_completed" to resolvedBy + listOf(userId)
+                )
+            )
+            Result.success(Unit)
+        } catch (e: AppwriteException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

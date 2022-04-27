@@ -3,10 +3,12 @@ package com.github.calo001.nigma.ui.model
 data class PuzzleView(
     val id: String,
     val username: String,
+    val description: String,
     val userImageProfileUrl: String,
     val puzzleImage: ByteArray,
     val gridSize: Int,
     val puzzleName: String,
+    val resolvedBy: List<String>,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

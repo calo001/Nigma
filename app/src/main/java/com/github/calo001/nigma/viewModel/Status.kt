@@ -28,6 +28,7 @@ sealed interface AddPuzzleStatus {
 }
 
 data class Puzzle(
+    val id: String,
     val imgBitmap: Bitmap?,
     val fileName: String,
     val name: String,
@@ -35,6 +36,6 @@ data class Puzzle(
     val fileId: String? = null
 ) {
     companion object {
-        val default get() = Puzzle(imgBitmap = null, "photo.png", "Puzzle name", "Description")
+        val default get() = Puzzle("1", imgBitmap = null, "photo.png", "Puzzle name", "Description")
     }
 }
