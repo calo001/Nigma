@@ -11,7 +11,7 @@ import com.google.accompanist.navigation.animation.composable
 val defaultEnter get(): AnimatedContentScope<NavBackStackEntry>.() -> EnterTransition? = {
     slideIntoContainer(
         AnimatedContentScope.SlideDirection.Left,
-        animationSpec = tween(700)
+        animationSpec = tween(400)
     )
 }
 
@@ -19,7 +19,7 @@ val defaultEnter get(): AnimatedContentScope<NavBackStackEntry>.() -> EnterTrans
 val defaultPopEnter get(): AnimatedContentScope<NavBackStackEntry>.() -> EnterTransition? = {
     slideIntoContainer(
         AnimatedContentScope.SlideDirection.Right,
-        animationSpec = tween(700)
+        animationSpec = tween(400)
     )
 }
 
@@ -27,7 +27,7 @@ val defaultPopEnter get(): AnimatedContentScope<NavBackStackEntry>.() -> EnterTr
 val defaultExit get(): AnimatedContentScope<NavBackStackEntry>.() -> ExitTransition? = {
     slideOutOfContainer(
         AnimatedContentScope.SlideDirection.Left,
-        animationSpec = tween(700)
+        animationSpec = tween(400)
     )
 }
 
@@ -35,6 +35,6 @@ val defaultExit get(): AnimatedContentScope<NavBackStackEntry>.() -> ExitTransit
 val defaultPopExit get(): AnimatedContentScope<NavBackStackEntry>.() -> ExitTransition? = {
     slideOutOfContainer(
         AnimatedContentScope.SlideDirection.Right,
-        animationSpec = tween(700)
+        animationSpec = tween(400)
     )
 }

@@ -1,6 +1,8 @@
 package com.github.calo001.nigma.repository
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.github.calo001.nigma.repository.model.UserInfo
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.util.toFile
 import com.github.calo001.nigma.viewModel.Puzzle
@@ -47,10 +49,13 @@ class RemoteUserRepository @Inject constructor(
         }
     }
 
-    suspend fun getCurrentSession(): Result<User> {
+    suspend fun getCurrentSession(): Result<UserInfo> {
         return try {
             val currentSession = account.get()
-            Result.success(currentSession)
+            val imgByteArray = (currentSession.prefs.data["image_profile"] as? String)?.let { fileId ->
+                storage.getFileDownload("profile-images", fileId)
+            }
+            Result.success(UserInfo.fromUser(currentSession).copy(imageProfile = imgByteArray))
         } catch (e: AppwriteException) {
             Result.failure(e)
         }
@@ -169,6 +174,48 @@ class RemoteUserRepository @Inject constructor(
                 )
             )
             Result.success(Unit)
+        } catch (e: AppwriteException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun uploadImageProfile(bitmap: Bitmap, userInfo: UserInfo): Result<io.appwrite.models.File> {
+        return try {
+            bitmap.toFile(userInfo.id)?.let { file ->
+                Result.success(
+                    storage.createFile(
+                        bucketId = "profile-images",
+                        fileId = "unique()",
+                        file = file,
+                    )
+                )
+            } ?: run {
+                Result.failure(NullPointerException())
+            }
+        } catch (e: AppwriteException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateProfileInfo(userInfo: UserInfo): Result<UserInfo> {
+        return try {
+            var currentAccount = account.get()
+
+            if (currentAccount.name != userInfo.username) {
+                currentAccount = account.updateName(userInfo.username)
+            }
+            if (currentAccount.prefs.data.getOrDefault("image_profile", "") != userInfo.imageProfileFileId) {
+                val result = account.updatePrefs(mapOf("image_profile" to userInfo.imageProfileFileId))
+                Result.success(
+                    UserInfo.fromUser(result)
+                )
+            } else {
+                Result.success(UserInfo.fromUser(currentAccount))
+            }
         } catch (e: AppwriteException) {
             Result.failure(e)
         } catch (e: Exception) {

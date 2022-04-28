@@ -1,7 +1,6 @@
 package com.github.calo001.nigma.ui.basic
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -25,7 +24,6 @@ import coil.request.ImageRequest
 import com.github.calo001.nigma.R
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.ui.theme.NigmaTheme
-import com.github.calo001.nigma.util.split
 import java.nio.ByteBuffer
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -39,7 +37,9 @@ fun PuzzleItem(
         modifier = modifier
     ){
         UserImageProfile(
+            bitmap = null,
             puzzle = puzzle,
+            onClick = {},
             modifier = Modifier.size(50.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -107,35 +107,43 @@ private fun PuzzleImage(
     }
 }
 
+@ExperimentalMaterialApi
 @Composable
 fun UserImageProfile(
     modifier: Modifier = Modifier,
     puzzle: PuzzleView,
+    bitmap: Bitmap?,
+    onClick: () -> Unit,
 ) {
     val profile = painterResource(id = R.drawable.profile)
     ProfileUserImage(
-        url = puzzle.userImageProfileUrl,
+        bitmap = bitmap,
         profile = profile,
+        onClick = onClick,
         modifier = modifier
     )
 }
 
+@ExperimentalMaterialApi
 @Composable
 fun ProfileUserImage(
     modifier: Modifier,
-    url: String,
-    profile: Painter
+    bitmap: Bitmap?,
+    profile: Painter,
+    onClick: () -> Unit,
 ) {
     Card(
         shape = CircleShape,
         elevation = 0.dp,
+        onClick = onClick,
         border = BorderStroke(2.dp, MaterialTheme.colors.surface),
         modifier = modifier,
     ) {
         AsyncImage(
-            model = url,
+            model = bitmap,
             placeholder = profile,
             error = profile,
+            contentScale = ContentScale.Crop,
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()

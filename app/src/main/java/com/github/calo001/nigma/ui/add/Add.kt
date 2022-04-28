@@ -2,6 +2,7 @@ package com.github.calo001.nigma.ui.add
 
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -22,13 +23,17 @@ import androidx.compose.material.icons.filled.PhotoAlbum
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +41,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.size.Scale
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
@@ -43,8 +52,11 @@ import com.github.calo001.nigma.R
 import com.github.calo001.nigma.view.Screen
 import com.github.calo001.nigma.view.gridDefaults
 import com.github.calo001.nigma.viewModel.AddPuzzleStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
+@ExperimentalComposeUiApi
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun AddScreen(
@@ -60,18 +72,22 @@ fun AddScreen(
     onReset: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            val bitmapFromGallery = if (Build.VERSION.SDK_INT < 28) {
-                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-            } else {
-                val source = ImageDecoder.createSource(context.contentResolver, uri)
-                ImageDecoder.decodeBitmap(source)
-            }
-            bitmapFromGallery?.let { bitmap ->
-                onImageCaptured(bitmap, uri.lastPathSegment ?: uri.lastPathSegment ?: "puzzle.png")
+            scope.launch(Dispatchers.IO) {
+                val bitmapFromGallery = if (Build.VERSION.SDK_INT < 28) {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                } else {
+                    val source = ImageDecoder.createSource(context.contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source)
+                }
+                bitmapFromGallery?.let { bitmap ->
+                    val compressed = ThumbnailUtils.extractThumbnail(bitmap.copy(Bitmap.Config.RGB_565, false), 600, 600)
+                    onImageCaptured(compressed, uri.lastPathSegment ?: uri.lastPathSegment ?: "puzzle.png")
+                }
             }
         }
     }
@@ -165,6 +181,7 @@ fun UploadingContent() {
     }
 }
 
+@ExperimentalComposeUiApi
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun AddPuzzleContent(
@@ -294,10 +311,14 @@ fun SquarePuzzle(
             .size(size.dp)
     ) {
         if (bitmap != null) {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(bitmap)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.FillBounds,
+                filterQuality = FilterQuality.Medium,
                 modifier = Modifier.fillMaxSize()
             )
         } else {
@@ -322,8 +343,14 @@ fun CloseButton(
     }
 }
 
+@ExperimentalComposeUiApi
 @Composable
-fun EditableTextField(text: String, onChange: (String) -> Unit) {
+fun EditableTextField(
+    text: String,
+    onChange: (String) -> Unit,
+    onClickAccept: () -> Unit = {},
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     var editable by rememberSaveable { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
@@ -338,12 +365,13 @@ fun EditableTextField(text: String, onChange: (String) -> Unit) {
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
             )
-            SideEffect {
+            LaunchedEffect(key1 = text) {
                 focusRequester.requestFocus()
             }
             OutlinedButton(
                 onClick = {
                     editable = false
+                    onClickAccept()
                 },
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -353,6 +381,7 @@ fun EditableTextField(text: String, onChange: (String) -> Unit) {
             }
         }
     } else {
+        keyboardController?.hide()
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -373,6 +402,7 @@ fun EditableTextField(text: String, onChange: (String) -> Unit) {
     }
 }
 
+@ExperimentalComposeUiApi
 @Preview
 @Composable
 fun AddScreenPreview() {

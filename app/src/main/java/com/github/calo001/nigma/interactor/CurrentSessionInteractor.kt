@@ -5,7 +5,5 @@ import io.appwrite.models.User
 import javax.inject.Inject
 
 class CurrentSessionInteractor @Inject constructor(private val repository: RemoteUserRepository) {
-    suspend fun currentSession(): Result<User> {
-        return repository.getCurrentSession()
-    }
+    suspend fun currentSession() = repository.getCurrentSession()
 }

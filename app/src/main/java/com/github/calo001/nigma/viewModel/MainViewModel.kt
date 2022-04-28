@@ -1,8 +1,11 @@
 package com.github.calo001.nigma.viewModel
 
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.calo001.nigma.interactor.*
+import com.github.calo001.nigma.repository.model.UserInfo
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.ui.signup.Email
 import com.github.calo001.nigma.ui.signup.Password
@@ -22,6 +25,7 @@ class MainViewModel @Inject constructor(
     private val uploadPuzzleInteractor: UploadPuzzleInteractor,
     private val realtimePuzzlesInteractor: RealtimePuzzlesInteractor,
     private val puzzleResolvedInteractor: PuzzleResolvedInteractor,
+    private val updateUserProfileInteractor: UpdateUserProfileInteractor,
 ): ViewModel() {
     private val _puzzleListState = MutableStateFlow<PuzzleListState>(PuzzleListState.Loading(emptyList()))
     val puzzleListState: StateFlow<PuzzleListState> get() = _puzzleListState
@@ -97,6 +101,10 @@ class MainViewModel @Inject constructor(
     }
 
     fun getCurrentSession() = viewModelScope.launch(Dispatchers.IO) {
+        loadUserInfo()
+    }
+
+    private suspend fun loadUserInfo() {
         val response = currentSessionInteractor.currentSession()
         when {
             response.isSuccess -> {
@@ -106,7 +114,9 @@ class MainViewModel @Inject constructor(
                     _sessionStatus.tryEmit(SessionStatus.Error)
                 }
             }
-            response.isFailure -> { _sessionStatus.tryEmit(SessionStatus.Error) }
+            response.isFailure -> {
+                _sessionStatus.tryEmit(SessionStatus.Error)
+            }
         }
     }
 
@@ -137,6 +147,7 @@ class MainViewModel @Inject constructor(
                     SessionStatus.LoggedOut,
                     SessionStatus.SignInSuccess -> "${System.currentTimeMillis()}.png"
                     is SessionStatus.SessionStarted -> "${session.user.id}.png"
+                    is SessionStatus.UpdatingSession -> "${session.user?.id}.png"
                 }
 
                 if (puzzle is AddPuzzleStatus.Building) {
@@ -183,6 +194,74 @@ class MainViewModel @Inject constructor(
                         puzzleView = puzzleView,
                         userId = session.user.id,
                     )
+                }
+            }
+        }
+    }
+
+    fun updateProfileName(name: String) = viewModelScope.launch(Dispatchers.IO) {
+        sessionStatus.firstOrNull()?.let { session ->
+            if(session is SessionStatus.SessionStarted) {
+                _sessionStatus.tryEmit(
+                    SessionStatus.UpdatingSession(
+                        when (sessionStatus.value) {
+                            SessionStatus.Error,
+                            SessionStatus.Idle,
+                            SessionStatus.Loading,
+                            SessionStatus.LoggedOut,
+                            SessionStatus.SignInSuccess -> null
+                            is SessionStatus.UpdatingSession -> (sessionStatus.value as SessionStatus.UpdatingSession).user
+                            is SessionStatus.SessionStarted -> (sessionStatus.value as SessionStatus.SessionStarted).user
+                        }
+                    )
+                )
+
+                val resultUpdate = updateUserProfileInteractor.updateProfileInfo(
+                    session.user.copy(username = name)
+                )
+                when {
+                    resultUpdate.isSuccess -> {
+                        loadUserInfo()
+                    }
+                    resultUpdate.isFailure -> {}
+                }
+            }
+        }
+    }
+
+    fun updateProfileImage(bitmap: Bitmap) = viewModelScope.launch(Dispatchers.IO) {
+        sessionStatus.firstOrNull()?.let { session ->
+            if(session is SessionStatus.SessionStarted) {
+                _sessionStatus.tryEmit(SessionStatus.UpdatingSession(
+                    when (sessionStatus.value) {
+                        SessionStatus.Error,
+                        SessionStatus.Idle,
+                        SessionStatus.Loading,
+                        SessionStatus.LoggedOut,
+                        SessionStatus.SignInSuccess -> null
+                        is SessionStatus.UpdatingSession -> (sessionStatus.value as SessionStatus.UpdatingSession).user
+                        is SessionStatus.SessionStarted -> (sessionStatus.value as SessionStatus.SessionStarted).user
+                    }
+                ))
+
+                val result = updateUserProfileInteractor.uploadImageProfile(
+                    bitmap = bitmap,
+                    userInfo = session.user
+                )
+
+                when {
+                    result.isSuccess && result.getOrNull() != null -> {
+                        val resultUpdate = updateUserProfileInteractor.updateProfileInfo(
+                            session.user.copy(imageProfileFileId = result.getOrNull()?.id ?: "")
+                        )
+                        when {
+                            resultUpdate.isSuccess -> {
+                                loadUserInfo()
+                            }
+                            resultUpdate.isFailure -> {}
+                        }
+                    }
+                    result.isFailure -> Unit
                 }
             }
         }

@@ -2,6 +2,7 @@ package com.github.calo001.nigma.viewModel
 
 import android.graphics.Bitmap
 import android.net.Uri
+import com.github.calo001.nigma.repository.model.UserInfo
 import io.appwrite.models.User
 
 sealed interface SignUpStatus {
@@ -15,7 +16,8 @@ sealed interface SessionStatus {
     object Idle: SessionStatus
     object Loading: SessionStatus
     object SignInSuccess: SessionStatus
-    class SessionStarted(val user: User): SessionStatus
+    class SessionStarted(val user: UserInfo): SessionStatus
+    class UpdatingSession(val user: UserInfo?): SessionStatus
     object LoggedOut: SessionStatus
     object Error: SessionStatus
 }

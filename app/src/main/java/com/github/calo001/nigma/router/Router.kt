@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -32,6 +34,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 
+@ExperimentalComposeUiApi
+@ExperimentalMaterialApi
 @ExperimentalFoundationApi
 @OptIn(ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -65,11 +69,26 @@ fun Router(
                         Text("error")
                     }
                 }
+                is SessionStatus.UpdatingSession -> {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        MainScreen(
+                            puzzleListState = listPuzzles,
+                            username = (sessionStatus as SessionStatus.UpdatingSession).user?.username ?: "",
+                            onNavigate = onNavigate,
+                            userId = (sessionStatus as SessionStatus.UpdatingSession).user?.id ?: "",
+                            state = state,
+                            onClickPuzzle = { puzzle ->
+                                viewModel.getPuzzleById(puzzle)
+                                onNavigate(Screen.PuzzleResolver)
+                            }
+                        )
+                    }
+                }
                 is SessionStatus.SessionStarted -> {
                     Column(modifier = Modifier.fillMaxSize()) {
                         MainScreen(
                             puzzleListState = listPuzzles,
-                            username = (sessionStatus as SessionStatus.SessionStarted).user.name,
+                            username = (sessionStatus as SessionStatus.SessionStarted).user.username,
                             onNavigate = onNavigate,
                             userId = (sessionStatus as SessionStatus.SessionStarted).user.id,
                             state = state,
@@ -249,6 +268,7 @@ fun Router(
             LaunchedEffect(key1 = sessionStatus) {
                 when (sessionStatus) {
                     is SessionStatus.SessionStarted -> Unit
+                    is SessionStatus.UpdatingSession -> Unit
                     SessionStatus.Loading -> Unit
                     SessionStatus.SignInSuccess -> Unit
                     SessionStatus.Error,
@@ -262,10 +282,34 @@ fun Router(
             if (sessionStatus is SessionStatus.SessionStarted) {
                 ProfileScreen(
                     sessionInfo = (sessionStatus as SessionStatus.SessionStarted).user,
+                    showLoading = false,
                     onLogout = {
                         viewModel.logout()
+                    },
+                    onImageCaptured = { bitmap ->
+                        viewModel.updateProfileImage(bitmap)
+                    },
+                    onUsernameChanged = { username ->
+                        viewModel.updateProfileName(username)
                     }
                 )
+            }
+
+            if (sessionStatus is SessionStatus.UpdatingSession) {
+                    (sessionStatus as SessionStatus.UpdatingSession).user?.let { sessionInfo ->
+                        ProfileScreen(
+                            onLogout = {
+                                viewModel.logout() },
+                            sessionInfo = sessionInfo,
+                            onImageCaptured = { bitmap ->
+                                viewModel.updateProfileImage(bitmap)
+                            },
+                            showLoading = true,
+                            onUsernameChanged = { username ->
+
+                            }
+                        )
+                    }
             }
         }
 

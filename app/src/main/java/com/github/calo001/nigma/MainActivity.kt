@@ -2,6 +2,7 @@ package com.github.calo001.nigma
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.*
@@ -27,12 +28,16 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import com.github.calo001.nigma.router.shouldShowAddFab
 import com.github.calo001.nigma.ui.basic.ScaffoldOver
 import com.github.calo001.nigma.viewModel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
+@ExperimentalComposeUiApi
+@ExperimentalMaterialApi
 @ExperimentalFoundationApi
 @OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
@@ -49,14 +54,26 @@ class MainActivity : ComponentActivity() {
             var showBottomBar by rememberSaveable { mutableStateOf(currentRoute.shouldShowNavigator) }
             var showAddFab by rememberSaveable { mutableStateOf(currentRoute.shouldShowAddFab) }
             var currentScreen by remember { mutableStateOf<Screen>(Screen.SignIn) }
+            val keyboardController = LocalSoftwareKeyboardController.current
+
+//            BackHandler {
+//                val current = navController.currentBackStackEntry
+//                if (navController.backQueue.firstOrNull { it == current } != null) {
+//                    finishAfterTransition()
+//                } else {
+//                    navController.navigateUp()
+//                }
+//            }
 
             NigmaTheme {
                 ScaffoldOver(
                     bottomBar = {
                         navController.addOnDestinationChangedListener { controller, destination, args ->
-                            showBottomBar = Screen.fromString(destination.route).shouldShowNavigator
-                            showAddFab = Screen.fromString(destination.route).shouldShowAddFab
-                            currentScreen = Screen.fromString(destination.route)
+                            val newDestination = Screen.fromString(destination.route)
+                            showBottomBar = newDestination.shouldShowNavigator
+                            showAddFab = newDestination.shouldShowAddFab
+                            currentScreen = newDestination
+                            keyboardController?.hide()
                         }
                         Box(
                             modifier = Modifier
@@ -84,7 +101,8 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     FloatingActionButton(
                                         onClick = {
-                                             viewModel.uploadPuzzle()
+                                            viewModel.uploadPuzzle()
+                                            keyboardController?.hide()
                                         },
                                         shape = MaterialTheme.shapes.small,
                                         modifier = Modifier
@@ -108,7 +126,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Router(
                             navController = navController,
-                            startDestination = currentScreen.route,
+                            startDestination = Screen.SignIn.route,
                             viewModel = viewModel,
                             onNavigate = { screen ->
                                 if (screen is Screen.Main) {
