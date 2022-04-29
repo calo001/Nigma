@@ -1,11 +1,13 @@
 package com.github.calo001.nigma.repository
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.github.calo001.nigma.repository.model.UserInfo
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.util.toFile
 import com.github.calo001.nigma.viewModel.Puzzle
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.appwrite.exceptions.AppwriteException
 import io.appwrite.models.Document
 import io.appwrite.models.Session
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow
 import java.lang.NullPointerException
+import java.nio.ByteBuffer
 import javax.inject.Inject
 
 class RemoteUserRepository @Inject constructor(
@@ -26,6 +29,7 @@ class RemoteUserRepository @Inject constructor(
     private val storage: Storage,
     private val database: Database,
     private val realtime: Realtime,
+    @ApplicationContext private val context: Context,
 ) {
     suspend fun createUser(username: String, email: String, password: String): Result<User> {
         return try {
@@ -76,7 +80,7 @@ class RemoteUserRepository @Inject constructor(
         puzzle: Puzzle
     ): Result<io.appwrite.models.File> {
         return try {
-            puzzle.imgBitmap?.toFile(puzzle.fileName)?.let { file ->
+            puzzle.imgBitmap?.toFile(puzzle.fileName, context)?.let { file ->
                 Result.success(
                     storage.createFile(
                         bucketId = "puzzles-imgs",
@@ -138,7 +142,7 @@ class RemoteUserRepository @Inject constructor(
                     PuzzleView(
                         id = document.data["\$id"] as String,
                         username = "",
-                        userImageProfileUrl = "",
+                        userImageProfileUrl = document.data["img_file_id"] as String,
                         puzzleImage = bitArrayImg,
                         gridSize = 3,
                         puzzleName = document.data["name"] as String,
@@ -183,7 +187,7 @@ class RemoteUserRepository @Inject constructor(
 
     suspend fun uploadImageProfile(bitmap: Bitmap, userInfo: UserInfo): Result<io.appwrite.models.File> {
         return try {
-            bitmap.toFile(userInfo.id)?.let { file ->
+            bitmap.toFile(userInfo.id, context)?.let { file ->
                 Result.success(
                     storage.createFile(
                         bucketId = "profile-images",

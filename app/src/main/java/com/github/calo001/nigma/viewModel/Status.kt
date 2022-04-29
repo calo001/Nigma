@@ -9,7 +9,7 @@ sealed interface SignUpStatus {
     object Idle: SignUpStatus
     object Loading: SignUpStatus
     object Success: SignUpStatus
-    object Error: SignUpStatus
+    class Error(val error: Throwable): SignUpStatus
 }
 
 sealed interface SessionStatus {
@@ -19,14 +19,15 @@ sealed interface SessionStatus {
     class SessionStarted(val user: UserInfo): SessionStatus
     class UpdatingSession(val user: UserInfo?): SessionStatus
     object LoggedOut: SessionStatus
-    object Error: SessionStatus
+    class Error(val error: Throwable): SessionStatus
 }
 
 sealed interface AddPuzzleStatus {
+    class  Idle(val puzzle: Puzzle): AddPuzzleStatus
     class  Building(val puzzle: Puzzle): AddPuzzleStatus
     class  Uploading(val puzzle: Puzzle): AddPuzzleStatus
     object Success: AddPuzzleStatus
-    object Error: AddPuzzleStatus
+    class Error(val error: Throwable): AddPuzzleStatus
 }
 
 data class Puzzle(

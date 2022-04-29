@@ -29,6 +29,7 @@ import com.github.calo001.nigma.R
 import com.github.calo001.nigma.repository.model.UserInfo
 import com.github.calo001.nigma.ui.add.EditableTextField
 import com.github.calo001.nigma.ui.basic.ProfileUserImage
+import com.github.calo001.nigma.ui.model.PuzzleView
 import okhttp3.internal.EMPTY_BYTE_ARRAY
 import java.nio.ByteBuffer
 
@@ -41,6 +42,7 @@ fun ProfileScreen(
     onImageCaptured: (Bitmap) -> Unit,
     showLoading: Boolean,
     onUsernameChanged: (String) -> Unit,
+    list: List<PuzzleView>
 ) {
     val context = LocalContext.current
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -65,7 +67,7 @@ fun ProfileScreen(
     ) {
         val imageLoader = ImageLoader(context)
         val request = ImageRequest.Builder(context)
-            .data(ByteBuffer.wrap(sessionInfo.imageProfile ?: EMPTY_BYTE_ARRAY))
+            .data(ByteBuffer.wrap(sessionInfo.imageProfile?.clone() ?: EMPTY_BYTE_ARRAY))
             .crossfade(true)
             .error(R.drawable.ic_logo)
             .target { drawable ->
@@ -119,7 +121,21 @@ fun ProfileScreen(
             onClickAccept = { onUsernameChanged(userName) },
         )
         LogoutButton(onLogout = onLogout)
+        CompletedList(list)
         Spacer(modifier = Modifier.height(140.dp))
+    }
+}
+
+@Composable
+fun CompletedList(list: List<PuzzleView>) {
+    Column {
+        Text(
+            text = "Puzzles completed",
+            modifier = Modifier.padding(16.dp)
+        )
+        PuzzleMinimalItem(
+            list = list
+        )
     }
 }
 
@@ -142,6 +158,7 @@ fun ProfileScreenPreview() {
         showLoading = false,
         onUsernameChanged = { username ->
 
-        }
+        },
+        list = emptyList(),
     )
 }

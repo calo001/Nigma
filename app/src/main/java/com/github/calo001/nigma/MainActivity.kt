@@ -14,8 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import com.github.calo001.nigma.router.Navigator
@@ -25,16 +24,19 @@ import com.github.calo001.nigma.ui.basic.BottomBar
 import com.github.calo001.nigma.ui.theme.NigmaTheme
 import com.github.calo001.nigma.view.Screen
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import com.github.calo001.nigma.router.shouldShowAddFab
 import com.github.calo001.nigma.ui.basic.ScaffoldOver
+import com.github.calo001.nigma.viewModel.AddPuzzleStatus
 import com.github.calo001.nigma.viewModel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @ExperimentalComposeUiApi
 @ExperimentalMaterialApi
@@ -55,15 +57,6 @@ class MainActivity : ComponentActivity() {
             var showAddFab by rememberSaveable { mutableStateOf(currentRoute.shouldShowAddFab) }
             var currentScreen by remember { mutableStateOf<Screen>(Screen.SignIn) }
             val keyboardController = LocalSoftwareKeyboardController.current
-
-//            BackHandler {
-//                val current = navController.currentBackStackEntry
-//                if (navController.backQueue.firstOrNull { it == current } != null) {
-//                    finishAfterTransition()
-//                } else {
-//                    navController.navigateUp()
-//                }
-//            }
 
             NigmaTheme {
                 ScaffoldOver(
@@ -99,45 +92,72 @@ class MainActivity : ComponentActivity() {
                                     .fillMaxWidth()
                                     .align(Alignment.BottomCenter)
                                 ) {
-                                    FloatingActionButton(
-                                        onClick = {
-                                            viewModel.uploadPuzzle()
-                                            keyboardController?.hide()
-                                        },
-                                        shape = MaterialTheme.shapes.small,
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(16.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Check,
-                                            contentDescription = null,
-                                        )
+                                    val builderStatus by viewModel.puzzleCreator.collectAsState()
+                                    if (builderStatus is AddPuzzleStatus.Building) {
+                                        FloatingActionButton(
+                                            onClick = {
+                                                viewModel.uploadPuzzle()
+                                                keyboardController?.hide()
+                                            },
+                                            shape = MaterialTheme.shapes.small,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(16.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Check,
+                                                contentDescription = null,
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                ) {
-                    Surface(
-                        color = MaterialTheme.colors.background,
-                        contentColor = contentColorFor(MaterialTheme.colors.surface),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Router(
-                            navController = navController,
-                            startDestination = Screen.SignIn.route,
-                            viewModel = viewModel,
-                            onNavigate = { screen ->
-                                if (screen is Screen.Main) {
-                                    navigator.navigateHome()
-                                } else {
-                                    navigator.navigate(screen)
+                    },
+                    topSnack = {
+                        val message by viewModel.snackErrorMessage.collectAsState()
+                        AnimatedVisibility (message.isNullOrBlank().not()) {
+                            Snackbar(
+                                modifier = Modifier.padding(16.dp),
+                                action = {
+                                    Button(onClick = {
+                                        viewModel.cleanErrorMessage()
+                                    }) {
+                                        Text(text = "Ok")
+                                    }
+                                }
+                            ) {
+                                Text(text = message ?: "Error")
+                            }
+
+                            LaunchedEffect(key1 = message) {
+                                lifecycleScope.launch(Dispatchers.IO) {
+                                    delay(8_000)
+                                    viewModel.cleanErrorMessage()
                                 }
                             }
-                        )
+                        }
+                    }, content = {
+                        Surface(
+                            color = MaterialTheme.colors.background,
+                            contentColor = contentColorFor(MaterialTheme.colors.surface),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Router(
+                                navController = navController,
+                                startDestination = Screen.SignIn.route,
+                                viewModel = viewModel,
+                                onNavigate = { screen ->
+                                    if (screen is Screen.Main) {
+                                        navigator.navigateHome()
+                                    } else {
+                                        navigator.navigate(screen)
+                                    }
+                                }
+                            )
+                        }
                     }
-                }
+                )
             }
         }
     }

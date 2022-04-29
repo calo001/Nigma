@@ -24,10 +24,7 @@ import com.github.calo001.nigma.ui.resolver.PuzzleResolver
 import com.github.calo001.nigma.ui.signing.SingInScreen
 import com.github.calo001.nigma.ui.signup.SingUpScreen
 import com.github.calo001.nigma.view.Screen
-import com.github.calo001.nigma.viewModel.AddPuzzleStatus
-import com.github.calo001.nigma.viewModel.MainViewModel
-import com.github.calo001.nigma.viewModel.Puzzle
-import com.github.calo001.nigma.viewModel.SessionStatus
+import com.github.calo001.nigma.viewModel.*
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -61,12 +58,12 @@ fun Router(
             val sessionStatus by viewModel.sessionStatus.collectAsState()
 
             when (sessionStatus) {
-                SessionStatus.Error -> {
+                is SessionStatus.Error -> {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Text("error")
+                        Text((sessionStatus as SessionStatus.Error).error.message ?: "Error")
                     }
                 }
                 is SessionStatus.UpdatingSession -> {
@@ -86,6 +83,9 @@ fun Router(
                 }
                 is SessionStatus.SessionStarted -> {
                     Column(modifier = Modifier.fillMaxSize()) {
+                        LaunchedEffect(key1 = Unit) {
+                            viewModel.initDataSource()
+                        }
                         MainScreen(
                             puzzleListState = listPuzzles,
                             username = (sessionStatus as SessionStatus.SessionStarted).user.username,
@@ -136,7 +136,7 @@ fun Router(
                         CircularProgressIndicator()
                     }
                 }
-                SessionStatus.Error,
+                is SessionStatus.Error,
                 SessionStatus.LoggedOut -> {
                     SingInScreen(
                         onNavigate = onNavigate,
@@ -155,6 +155,9 @@ fun Router(
                 is SessionStatus.SessionStarted -> {
                     onNavigate(Screen.Main)
                 }
+                is SessionStatus.UpdatingSession -> {
+                    onNavigate(Screen.Main)
+                }
             }
         }
 
@@ -170,15 +173,21 @@ fun Router(
                 onNavigate = onNavigate,
                 status = status,
                 onSignupRequest = { email, password, username ->
-                    viewModel.createUser(email, password, username)
+                    viewModel.createUser(
+                        email = email,
+                        password = password,
+                        username = username
+                    )
                 },
                 modifier = Modifier.padding(16.dp),
             )
 
             LaunchedEffect(key1 = status) {
-                onNavigate(Screen.SignIn)
+                if (status is SignUpStatus.Success) {
+                    onNavigate(Screen.SignIn)
+                    viewModel.resetSignupStatus()
+                }
             }
-
         }
 
         composable(
@@ -193,7 +202,8 @@ fun Router(
                 is AddPuzzleStatus.Building -> (puzzleStatus as AddPuzzleStatus.Building).puzzle
                 AddPuzzleStatus.Success -> Puzzle.default
                 is AddPuzzleStatus.Uploading -> (puzzleStatus as AddPuzzleStatus.Uploading).puzzle
-                AddPuzzleStatus.Error -> Puzzle.default
+                is AddPuzzleStatus.Error -> Puzzle.default
+                is AddPuzzleStatus.Idle -> (puzzleStatus as AddPuzzleStatus.Idle).puzzle
             }
 
             val externalStoragePermissionState = rememberPermissionState(
@@ -218,6 +228,9 @@ fun Router(
                     },
                     modifier = Modifier.padding(16.dp),
                     onReset = {
+                        viewModel.resetPuzzleCreator()
+                    },
+                    onClose = {
                         viewModel.resetPuzzleCreator()
                     }
                 )
@@ -264,6 +277,7 @@ fun Router(
             popExitTransition = defaultPopExit,
         ) {
             val sessionStatus by viewModel.sessionStatus.collectAsState()
+            val resolvedByUser by viewModel.completedPuzzles.collectAsState()
 
             LaunchedEffect(key1 = sessionStatus) {
                 when (sessionStatus) {
@@ -271,7 +285,7 @@ fun Router(
                     is SessionStatus.UpdatingSession -> Unit
                     SessionStatus.Loading -> Unit
                     SessionStatus.SignInSuccess -> Unit
-                    SessionStatus.Error,
+                    is SessionStatus.Error,
                     SessionStatus.Idle,
                     SessionStatus.LoggedOut -> {
                         onNavigate(Screen.SignIn)
@@ -291,7 +305,8 @@ fun Router(
                     },
                     onUsernameChanged = { username ->
                         viewModel.updateProfileName(username)
-                    }
+                    },
+                    list = resolvedByUser,
                 )
             }
 
@@ -301,13 +316,10 @@ fun Router(
                             onLogout = {
                                 viewModel.logout() },
                             sessionInfo = sessionInfo,
-                            onImageCaptured = { bitmap ->
-                                viewModel.updateProfileImage(bitmap)
-                            },
+                            onImageCaptured = { },
                             showLoading = true,
-                            onUsernameChanged = { username ->
-
-                            }
+                            onUsernameChanged = { },
+                            list = resolvedByUser,
                         )
                     }
             }

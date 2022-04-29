@@ -132,7 +132,7 @@ private fun PuzzleContent(
     ) {
         val imageLoader = ImageLoader(context)
         val request = ImageRequest.Builder(context)
-            .data(ByteBuffer.wrap(puzzleView.puzzleImage))
+            .data(ByteBuffer.wrap(puzzleView.puzzleImage.clone()))
             .crossfade(true)
             .error(R.drawable.ic_logo)
             .target { drawable ->

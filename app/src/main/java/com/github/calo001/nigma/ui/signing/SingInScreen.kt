@@ -93,13 +93,14 @@ fun SingInScreen(
                                 modifier = Modifier.size(48.dp)
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text(text = "Signup")
+                            Text(text = "Login")
                         }
                     }
-                    SessionStatus.Error,
+                    is SessionStatus.Error,
                     SessionStatus.LoggedOut,
                     SessionStatus.SignInSuccess,
                     is SessionStatus.SessionStarted -> Text(text = "Login")
+                    is SessionStatus.UpdatingSession -> Text(text = "Login")
                 }
             }
             TextButton(

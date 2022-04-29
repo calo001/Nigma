@@ -70,6 +70,7 @@ fun AddScreen(
     puzzleDescription: String,
     bitmap: Bitmap?,
     onReset: () -> Unit,
+    onClose: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -103,7 +104,8 @@ fun AddScreen(
             onDescriptionChange = onDescriptionChange,
             onGalleryLaunch = {
                 galleryLauncher.launch("image/*")
-            }
+            },
+            onClose = onClose,
         )
 
         AnimatedVisibility(
@@ -192,7 +194,8 @@ private fun AddPuzzleContent(
     bitmap: Bitmap?,
     puzzleDescription: String,
     onDescriptionChange: (String) -> Unit,
-    onGalleryLaunch: () -> Unit
+    onGalleryLaunch: () -> Unit,
+    onClose: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     Column(
@@ -202,9 +205,7 @@ private fun AddPuzzleContent(
     ) {
         CloseButton(
             modifier = Modifier.align(Alignment.End),
-            onClick = {
-                onNavigate(Screen.Main)
-            }
+            onClick = onClose
         )
         EditableTextField(
             text = puzzleName,

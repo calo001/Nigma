@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 fun ScaffoldOver(
     bottomBar: @Composable BoxScope.() -> Unit,
     content: @Composable BoxScope.() -> Unit,
+    topSnack: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -22,6 +23,7 @@ fun ScaffoldOver(
             .align(Alignment.BottomCenter)
         ) {
             bottomBar()
+            topSnack()
         }
     }
 }

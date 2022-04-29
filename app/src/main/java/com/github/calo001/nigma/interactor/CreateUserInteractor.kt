@@ -6,6 +6,10 @@ import javax.inject.Inject
 
 class CreateUserInteractor @Inject constructor(private val repository: RemoteUserRepository){
     suspend fun createUser(username: String, email: String, password: String): Result<User> {
-        return repository.createUser(username, email, password)
+        return repository.createUser(
+            username = username,
+            email = email,
+            password = password
+        )
     }
 }

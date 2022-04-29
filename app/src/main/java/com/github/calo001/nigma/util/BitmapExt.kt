@@ -1,7 +1,11 @@
 package com.github.calo001.nigma.util
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import androidx.annotation.RequiresApi
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -28,11 +32,13 @@ fun Bitmap.split(xCount: Int, yCount: Int): Array<Array<Bitmap?>> {
     return bitmaps
 }
 
-fun Bitmap.toFile(fileNameToSave: String): File? { // File name like "image.png"
+fun Bitmap.toFile(fileNameToSave: String, context: Context): File? { // File name like "image.png"
     //create a file to write bitmap data
     var file: File? = null
     return try {
-        file = File(Environment.getExternalStorageDirectory().toString() + File.separator + fileNameToSave)
+        //Environment.getExternalStorageDirectory().toString()
+        val externalUri = context.cacheDir
+        file = File(externalUri.toString() + File.separator + fileNameToSave.replace(":", "_"))
         file.createNewFile()
 
         //Convert bitmap to byte array

@@ -25,13 +25,14 @@ fun BottomBar(
     ) {
         Card(
             contentColor = MaterialTheme.colors.primary,
+            elevation = 16.dp,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
             Row(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 6.dp)
             ) {
                 FloatingActionButton(
                     onClick = { onNavigate(Screen.AddPuzzle) },

@@ -3,9 +3,7 @@ package com.github.calo001.nigma.viewModel
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.github.calo001.nigma.interactor.*
-import com.github.calo001.nigma.repository.model.UserInfo
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.ui.signup.Email
 import com.github.calo001.nigma.ui.signup.Password
@@ -15,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.NullPointerException
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -39,23 +38,28 @@ class MainViewModel @Inject constructor(
     private val _sessionStatus = MutableStateFlow<SessionStatus>(SessionStatus.Idle)
     val sessionStatus: StateFlow<SessionStatus> get() = _sessionStatus
 
-    private val _puzzleCreator = MutableStateFlow<AddPuzzleStatus>(AddPuzzleStatus.Building(Puzzle.default))
+    private val _completedPuzzles = MutableStateFlow<List<PuzzleView>>(emptyList())
+    val completedPuzzles: StateFlow<List<PuzzleView>> get() = _completedPuzzles
+
+    private val _puzzleCreator = MutableStateFlow<AddPuzzleStatus>(AddPuzzleStatus.Idle(Puzzle.default))
     val puzzleCreator: StateFlow<AddPuzzleStatus> get() = _puzzleCreator
+
+    private val _snackErrorMessage = MutableStateFlow<String?>(null)
+    val snackErrorMessage: StateFlow<String?> get() = _snackErrorMessage
 
     fun getPuzzleById(puzzle: PuzzleView) {
         _puzzleSelected.tryEmit(puzzle)
     }
 
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            sessionStatus.collect { session ->
-                if (session is SessionStatus.SessionStarted) {
-                    fetchPuzzleList()
-                    initRealtime()
-                }
+    fun initDataSource() = viewModelScope.launch(Dispatchers.IO) {
+        sessionStatus.collect { session ->
+            if (session is SessionStatus.SessionStarted) {
+                fetchPuzzleList()
+                initRealtime()
             }
         }
     }
+
     private suspend fun initRealtime() {
         realtimePuzzlesInteractor.subscribeRealtime()
             .collect {
@@ -67,14 +71,29 @@ class MainViewModel @Inject constructor(
         _puzzleListState.tryEmit(PuzzleListState.Loading(
             when (_puzzleListState.value) {
                 PuzzleListState.Error -> emptyList()
-                is PuzzleListState.Loading -> (_puzzleListState.value as PuzzleListState.Loading).list
-                is PuzzleListState.Success -> (_puzzleListState.value as PuzzleListState.Success).list
+                is PuzzleListState.Loading -> {
+                    (_puzzleListState.value as PuzzleListState.Loading).list
+                }
+                is PuzzleListState.Success -> {
+                    (_puzzleListState.value as PuzzleListState.Success).list
+                }
             }
         ))
         val result = realtimePuzzlesInteractor.getPuzzleList()
         when {
             result.isSuccess -> {
-                _puzzleListState.tryEmit(PuzzleListState.Success(result.getOrNull() ?: emptyList()))
+                val newList = PuzzleListState.Success(result.getOrNull() ?: emptyList())
+                val userId = getUserId()
+                val mainPuzzlesList = newList.list
+                    .groupBy {
+                        it.resolvedBy.contains(userId)
+                    }
+                _puzzleListState.tryEmit(PuzzleListState.Success(mainPuzzlesList[false] ?: emptyList()))
+
+                userId?.let {
+                    //val userResolved = newList.list.filter { it.resolvedBy.contains(userId) }
+                    _completedPuzzles.tryEmit(mainPuzzlesList[true] ?: emptyList())
+                }
             }
             result.isFailure -> {
                 _puzzleListState.tryEmit(PuzzleListState.Error)
@@ -82,11 +101,31 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private suspend fun getUserId(): String? {
+        return sessionStatus.firstOrNull()?.let { sessionStatus ->
+            when (sessionStatus) {
+                is SessionStatus.Error -> null
+                SessionStatus.Idle -> null
+                SessionStatus.Loading -> null
+                SessionStatus.LoggedOut -> null
+                SessionStatus.SignInSuccess -> null
+                is SessionStatus.SessionStarted -> sessionStatus.user.id
+                is SessionStatus.UpdatingSession -> sessionStatus.user?.id
+            }
+        }
+    }
+
     fun createUser(username: String, email: String, password: String) = viewModelScope.launch {
         _signupStatus.tryEmit(SignUpStatus.Loading)
-        val response = createUserInteractor.createUser(email, password, username)
+        val response = createUserInteractor.createUser(
+            email = email,
+            password = password,
+            username = username
+        )
         when {
-            response.isFailure -> { _signupStatus.tryEmit(SignUpStatus.Error) }
+            response.isFailure -> { _signupStatus.tryEmit(SignUpStatus.Error(
+                response.exceptionOrNull() ?: NullPointerException())
+            ) }
             response.isSuccess -> { _signupStatus.tryEmit(SignUpStatus.Success) }
         }
     }
@@ -95,27 +134,49 @@ class MainViewModel @Inject constructor(
         _sessionStatus.tryEmit(SessionStatus.Loading)
         val response = signInUserInteractor.login(email, password)
         when {
-            response.isFailure -> { _sessionStatus.tryEmit(SessionStatus.Error) }
+            response.isFailure -> {
+                _sessionStatus.tryEmit(SessionStatus.Error(
+                    response.exceptionOrNull() ?: NullPointerException()
+                    )
+                )
+                _snackErrorMessage.tryEmit(
+                    response.exceptionOrNull()?.message ?: "Error"
+                )
+            }
             response.isSuccess -> { _sessionStatus.tryEmit(SessionStatus.SignInSuccess) }
         }
     }
 
     fun getCurrentSession() = viewModelScope.launch(Dispatchers.IO) {
-        loadUserInfo()
+        loadUserInfo(false)
     }
 
-    private suspend fun loadUserInfo() {
+    private suspend fun loadUserInfo(showMessageError: Boolean = true) {
         val response = currentSessionInteractor.currentSession()
         when {
             response.isSuccess -> {
                 response.getOrNull()?.let { user ->
                     _sessionStatus.tryEmit(SessionStatus.SessionStarted(user))
                 } ?: run {
-                    _sessionStatus.tryEmit(SessionStatus.Error)
+                    _sessionStatus.tryEmit(SessionStatus.Error(
+                        response.exceptionOrNull() ?: NullPointerException()
+                    ))
+                    if(showMessageError) {
+                        _snackErrorMessage.tryEmit(
+                            response.exceptionOrNull()?.message ?: "Error"
+                        )
+                    }
                 }
             }
             response.isFailure -> {
-                _sessionStatus.tryEmit(SessionStatus.Error)
+                _sessionStatus.tryEmit(SessionStatus.Error(
+                    response.exceptionOrNull() ?: NullPointerException()
+                ))
+                if(showMessageError) {
+                    _snackErrorMessage.tryEmit(
+                        response.exceptionOrNull()?.message ?: "Error"
+                    )
+                }
             }
         }
     }
@@ -123,9 +184,20 @@ class MainViewModel @Inject constructor(
     fun logout() = viewModelScope.launch(Dispatchers.IO) {
         val result = logoutInteractor.logout()
         when {
-            result.isSuccess -> { _sessionStatus.tryEmit(SessionStatus.Idle) }
+            result.isSuccess -> {
+                cleanStates()
+            }
             result.isFailure -> Unit
         }
+    }
+
+    private fun cleanStates() {
+        _sessionStatus.tryEmit(SessionStatus.Idle)
+        _puzzleCreator.tryEmit(AddPuzzleStatus.Building(Puzzle.default))
+        _completedPuzzles.tryEmit(emptyList())
+        _signupStatus.tryEmit(SignUpStatus.Idle)
+        _puzzleSelected.tryEmit(null)
+        _puzzleListState.tryEmit(PuzzleListState.Loading(emptyList()))
     }
 
     fun updatePuzzleCreator(puzzle: Puzzle) {
@@ -141,7 +213,7 @@ class MainViewModel @Inject constructor(
                 val puzzle = combination.second
 
                 val nameFile = when (session) {
-                    SessionStatus.Error,
+                    is SessionStatus.Error,
                     SessionStatus.Idle,
                     SessionStatus.Loading,
                     SessionStatus.LoggedOut,
@@ -164,13 +236,25 @@ class MainViewModel @Inject constructor(
                                     resultUpload.isSuccess -> {
                                         _puzzleCreator.tryEmit(AddPuzzleStatus.Success)
                                     }
-                                    resultUpload.isFailure -> { _puzzleCreator.tryEmit(AddPuzzleStatus.Error) }
+                                    resultUpload.isFailure -> {
+                                        _puzzleCreator.tryEmit(AddPuzzleStatus.Error(
+                                            resultUpload.exceptionOrNull() ?: NullPointerException()
+                                        ))
+                                        _snackErrorMessage.tryEmit(
+                                            resultUpload.exceptionOrNull()?.message ?: "Error"
+                                        )
+                                    }
                                     else -> {}
                                 }
                             }
                         }
                         fileUpload.isFailure -> {
-                            _puzzleCreator.tryEmit(AddPuzzleStatus.Error)
+                            _puzzleCreator.tryEmit(AddPuzzleStatus.Error(
+                                fileUpload.exceptionOrNull() ?: NullPointerException()
+                            ))
+                            _snackErrorMessage.tryEmit(
+                                fileUpload.exceptionOrNull()?.message ?: "Error"
+                            )
                         }
                     }
                 }
@@ -178,17 +262,18 @@ class MainViewModel @Inject constructor(
     }
 
     fun resetPuzzleCreator() {
-        _puzzleCreator.tryEmit(AddPuzzleStatus.Building(Puzzle.default))
+        _puzzleCreator.tryEmit(AddPuzzleStatus.Idle(Puzzle.default))
     }
 
     fun onPuzzleResolved(puzzleView: PuzzleView) = viewModelScope.launch(Dispatchers.IO) {
         _sessionStatus.firstOrNull()?.let { session ->
             when (session) {
-                SessionStatus.Error,
+                is SessionStatus.Error,
                 SessionStatus.Idle,
                 SessionStatus.Loading,
                 SessionStatus.LoggedOut,
                 SessionStatus.SignInSuccess -> Unit
+                is SessionStatus.UpdatingSession -> Unit
                 is SessionStatus.SessionStarted -> {
                     puzzleResolvedInteractor.updatePuzzleItem(
                         puzzleView = puzzleView,
@@ -205,7 +290,7 @@ class MainViewModel @Inject constructor(
                 _sessionStatus.tryEmit(
                     SessionStatus.UpdatingSession(
                         when (sessionStatus.value) {
-                            SessionStatus.Error,
+                            is SessionStatus.Error,
                             SessionStatus.Idle,
                             SessionStatus.Loading,
                             SessionStatus.LoggedOut,
@@ -234,7 +319,7 @@ class MainViewModel @Inject constructor(
             if(session is SessionStatus.SessionStarted) {
                 _sessionStatus.tryEmit(SessionStatus.UpdatingSession(
                     when (sessionStatus.value) {
-                        SessionStatus.Error,
+                        is SessionStatus.Error,
                         SessionStatus.Idle,
                         SessionStatus.Loading,
                         SessionStatus.LoggedOut,
@@ -265,5 +350,13 @@ class MainViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun resetSignupStatus() {
+        _signupStatus.tryEmit(SignUpStatus.Idle)
+    }
+
+    fun cleanErrorMessage() {
+        _snackErrorMessage.tryEmit(null)
     }
 }

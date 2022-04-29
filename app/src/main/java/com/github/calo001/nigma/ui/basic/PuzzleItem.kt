@@ -2,6 +2,7 @@ package com.github.calo001.nigma.ui.basic
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Card
@@ -11,6 +12,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,7 +55,7 @@ fun PuzzleItem(
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun PuzzleImage(
+fun PuzzleImage(
     modifier: Modifier = Modifier,
     onClickPuzzle: () -> Unit,
     puzzle: PuzzleView,
@@ -70,7 +72,7 @@ private fun PuzzleImage(
             ) {
                 val imageLoader = ImageLoader(context)
                 val request = ImageRequest.Builder(context)
-                    .data(ByteBuffer.wrap(puzzle.puzzleImage))
+                    .data(ByteBuffer.wrap(puzzle.puzzleImage.clone()))
                     .crossfade(true)
                     .error(R.drawable.ic_logo)
                     .target { drawable ->

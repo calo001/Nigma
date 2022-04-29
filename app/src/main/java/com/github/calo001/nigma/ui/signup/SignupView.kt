@@ -83,7 +83,7 @@ fun SingUpScreen(
                     showPasswordError = password.isEmpty()
 
                     if (email.isNotEmpty() and password.isNotEmpty() and username.isNotEmpty()) {
-                        onSignupRequest(email, password, username)
+                        onSignupRequest(email.trim(), password.trim(), username.trim())
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
