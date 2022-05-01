@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.calo001.nigma.R
@@ -23,7 +24,6 @@ fun SingUpScreen(
     modifier: Modifier = Modifier,
     onNavigate: (Screen) -> Unit,
     onSignupRequest: (Email, Password, Username) -> Unit,
-    status: SignUpStatus,
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -68,6 +68,7 @@ fun SingUpScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
+                visualTransformation = PasswordVisualTransformation(),
                 label = {
                     Text(text = "Password")
                 },
@@ -92,7 +93,7 @@ fun SingUpScreen(
             }
             TextButton(
                 onClick = {
-
+                    onNavigate(Screen.SignIn)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -108,6 +109,6 @@ fun SingupScreenPreview() {
     NigmaTheme {
         SingUpScreen(Modifier, {}, { email, password, username ->
 
-        }, SignUpStatus.Idle)
+        })
     }
 }

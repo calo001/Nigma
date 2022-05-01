@@ -10,11 +10,13 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,8 +26,10 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.github.calo001.nigma.R
+import com.github.calo001.nigma.ui.add.NumberCard
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.ui.theme.NigmaTheme
+import com.github.calo001.nigma.view.gridDefaults
 import java.nio.ByteBuffer
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -33,23 +37,53 @@ import java.nio.ByteBuffer
 fun PuzzleItem(
     modifier: Modifier = Modifier,
     puzzle: PuzzleView,
-    onClickPuzzle: () -> Unit,
+    onClickPuzzle: (PuzzleView) -> Unit,
 ) {
+    var puzzleSize by rememberSaveable(
+        key = puzzle.id
+    ) { mutableStateOf(puzzle.gridSize) }
     Row (
         modifier = modifier
     ){
-        UserImageProfile(
-            bitmap = null,
-            puzzle = puzzle,
-            onClick = {},
-            modifier = Modifier.size(50.dp)
+        SizesPuzzle(
+            selected = puzzleSize,
+            onClick = {
+                puzzleSize = it
+            }
         )
         Spacer(modifier = Modifier.width(8.dp))
         PuzzleImage(
-            onClickPuzzle = onClickPuzzle,
+            onClickPuzzle = {
+                onClickPuzzle(puzzle.copy(gridSize = puzzleSize))
+            },
             puzzle = puzzle,
             modifier = Modifier.weight(1f)
         )
+    }
+}
+
+@ExperimentalMaterialApi
+@Composable
+fun SizesPuzzle(
+    modifier: Modifier = Modifier,
+    selected: Int,
+    onClick: (Int) -> Unit,
+) {
+    Column(
+        modifier = modifier
+    ) {
+        gridDefaults.forEach {
+            Spacer(modifier = Modifier.height(6.dp))
+            NumberCard(
+                number = it.number,
+                isSelected = it.number == selected,
+                onClick = {
+                    onClick(it.number)
+                },
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
     }
 }
 

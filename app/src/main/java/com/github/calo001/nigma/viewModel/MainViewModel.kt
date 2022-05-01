@@ -1,6 +1,7 @@
 package com.github.calo001.nigma.viewModel
 
 import android.graphics.Bitmap
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.calo001.nigma.interactor.*
@@ -51,6 +52,16 @@ class MainViewModel @Inject constructor(
         _puzzleSelected.tryEmit(puzzle)
     }
 
+    init {
+        viewModelScope.launch {
+            sessionStatus.collect {
+                if (it is SessionStatus.SessionStarted) {
+                    initDataSource()
+                }
+            }
+        }
+    }
+
     fun initDataSource() = viewModelScope.launch(Dispatchers.IO) {
         sessionStatus.collect { session ->
             if (session is SessionStatus.SessionStarted) {
@@ -84,15 +95,12 @@ class MainViewModel @Inject constructor(
             result.isSuccess -> {
                 val newList = PuzzleListState.Success(result.getOrNull() ?: emptyList())
                 val userId = getUserId()
-                val mainPuzzlesList = newList.list
-                    .groupBy {
-                        it.resolvedBy.contains(userId)
-                    }
-                _puzzleListState.tryEmit(PuzzleListState.Success(mainPuzzlesList[false] ?: emptyList()))
+                val (userPuzzles, mainPuzzlesList) = newList.list
+                    .partition { it.resolvedBy.contains(userId) }
+                _puzzleListState.tryEmit(PuzzleListState.Success(mainPuzzlesList))
 
                 userId?.let {
-                    //val userResolved = newList.list.filter { it.resolvedBy.contains(userId) }
-                    _completedPuzzles.tryEmit(mainPuzzlesList[true] ?: emptyList())
+                    _completedPuzzles.tryEmit(userPuzzles)
                 }
             }
             result.isFailure -> {
@@ -123,9 +131,12 @@ class MainViewModel @Inject constructor(
             username = username
         )
         when {
-            response.isFailure -> { _signupStatus.tryEmit(SignUpStatus.Error(
-                response.exceptionOrNull() ?: NullPointerException())
-            ) }
+            response.isFailure -> {
+                _signupStatus.tryEmit(SignUpStatus.Error(response.exceptionOrNull() ?: NullPointerException()))
+                _snackErrorMessage.tryEmit(
+                    response.exceptionOrNull()?.message ?: "Error"
+                )
+            }
             response.isSuccess -> { _signupStatus.tryEmit(SignUpStatus.Success) }
         }
     }
@@ -187,7 +198,9 @@ class MainViewModel @Inject constructor(
             result.isSuccess -> {
                 cleanStates()
             }
-            result.isFailure -> Unit
+            result.isFailure -> {
+                _snackErrorMessage.tryEmit("Error, try again.")
+            }
         }
     }
 

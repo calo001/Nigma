@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
@@ -23,6 +24,7 @@ internal class DragTargetInfo {
 
 internal val LocalDragTargetInfo = compositionLocalOf { DragTargetInfo() }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun <T> DragTarget(
     modifier: Modifier,

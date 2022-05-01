@@ -5,6 +5,18 @@ plugins {
     id 'kotlin-kapt'
 }
 
+def getApiendpoint() {
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    return properties.getProperty("api.endpoint");
+}
+
+def getProjectName() {
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    return properties.getProperty("app.write.project.name");
+}
+
 android {
     compileSdk 32
 
@@ -14,6 +26,9 @@ android {
         targetSdk 32
         versionCode 1
         versionName "1.0"
+
+        buildConfigField "String", "APP_WRITE_API_ENDPOINT", "\""+getApiendpoint()+"\""
+        buildConfigField "String", "APP_WRITE_PROJECT_NAME", "\""+getProjectName()+"\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -65,6 +80,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-navigation-animation:$accompanist_version"
     implementation "com.google.accompanist:accompanist-insets-ui:$accompanist_version"
     implementation "com.google.accompanist:accompanist-permissions:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist_version"
 
     implementation "io.coil-kt:coil-compose:2.0.0-rc03"
 

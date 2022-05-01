@@ -42,7 +42,10 @@ fun Router(
     onNavigate: (Screen) -> Unit,
     viewModel: MainViewModel,
 ) {
+    val listPuzzles by viewModel.puzzleListState.collectAsState()
+    val sessionStatus by viewModel.sessionStatus.collectAsState()
     val state = rememberLazyListState()
+
     AnimatedNavHost(
         navController = navController,
         startDestination = startDestination
@@ -54,8 +57,7 @@ fun Router(
             popEnterTransition = defaultPopEnter,
             popExitTransition = defaultPopExit,
         ) {
-            val listPuzzles by viewModel.puzzleListState.collectAsState()
-            val sessionStatus by viewModel.sessionStatus.collectAsState()
+
 
             when (sessionStatus) {
                 is SessionStatus.Error -> {
@@ -83,9 +85,6 @@ fun Router(
                 }
                 is SessionStatus.SessionStarted -> {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        LaunchedEffect(key1 = Unit) {
-                            viewModel.initDataSource()
-                        }
                         MainScreen(
                             puzzleListState = listPuzzles,
                             username = (sessionStatus as SessionStatus.SessionStarted).user.username,
@@ -171,7 +170,6 @@ fun Router(
             val status by viewModel.signupStatus.collectAsState()
             SingUpScreen(
                 onNavigate = onNavigate,
-                status = status,
                 onSignupRequest = { email, password, username ->
                     viewModel.createUser(
                         email = email,
@@ -232,6 +230,7 @@ fun Router(
                     },
                     onClose = {
                         viewModel.resetPuzzleCreator()
+                        onNavigate(Screen.Main)
                     }
                 )
                 is PermissionStatus.Denied -> {

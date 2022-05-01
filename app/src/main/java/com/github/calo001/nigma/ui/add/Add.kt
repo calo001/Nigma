@@ -14,6 +14,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -251,48 +252,39 @@ fun DescriptionPuzzle(
     }
 }
 
-@Composable
-fun SizesPuzzle(modifier: Modifier = Modifier) {
-    val elementSize = (LocalConfiguration.current.screenWidthDp - 16 - 16 - 18) / 3
-    Row(
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        modifier = modifier
-    ) {
-        gridDefaults.forEach {
-            NumberCard(
-                number = it.number,
-                isSelected = false,
-                modifier = Modifier.width(elementSize.dp)
-            )
-        }
-    }
-
-}
-
+@ExperimentalMaterialApi
 @Composable
 fun NumberCard(
     modifier: Modifier = Modifier,
     number: Int,
     isSelected: Boolean,
+    onClick: () -> Unit,
 ) {
     val background = if (isSelected) MaterialTheme.colors.primary else MaterialTheme.colors.background
     val content = if (isSelected) MaterialTheme.colors.background else MaterialTheme.colors.primary
-    val border = if (isSelected) null else BorderStroke(3.dp, MaterialTheme.colors.primary)
+    val border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colors.primary)
     Card(
         backgroundColor = background,
         border = border,
-        shape = MaterialTheme.shapes.small,
+        shape = CircleShape,
+        onClick = onClick,
         modifier = modifier
     ) {
-        Text(
-            text = number.toString(),
-            style = MaterialTheme.typography.h3,
-            color = content,
-            textAlign = TextAlign.Center,
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-        )
+                .padding(4.dp)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = number.toString(),
+                style = MaterialTheme.typography.caption,
+                color = content,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
+        }
     }
 }
 

@@ -34,16 +34,6 @@ fun BottomBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 6.dp)
             ) {
-                FloatingActionButton(
-                    onClick = { onNavigate(Screen.AddPuzzle) },
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.padding(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = null
-                    )
-                }
                 IconButton(onClick = { onNavigate(Screen.Main) }) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -65,6 +55,16 @@ fun BottomBar(
                             )
                         }
                     }
+                }
+                FloatingActionButton(
+                    onClick = { onNavigate(Screen.AddPuzzle) },
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.padding(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null
+                    )
                 }
                 IconButton(onClick = { onNavigate(Screen.Profile) }) {
                     Column(

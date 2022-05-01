@@ -1,6 +1,8 @@
 package com.github.calo001.nigma.di
 
 import android.content.Context
+import com.github.calo001.nigma.constants.APP_WRITE_API_ENDPOINT
+import com.github.calo001.nigma.constants.APP_WRITE_PROJECT_NAME
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,8 +21,8 @@ object AppWriteClient {
     @Singleton
     @Provides
     fun getAppWriteClient(@ApplicationContext context: Context) = Client(context)
-        .setEndpoint("https://192.168.100.7/v1") // Your API Endpoint
-        .setProject("nigma-app") // Your project ID
+        .setEndpoint(APP_WRITE_API_ENDPOINT) // Your API Endpoint
+        .setProject(APP_WRITE_PROJECT_NAME) // Your project ID
         .setSelfSigned(true) // For self signed certificates, only use for development
 
     @Singleton

@@ -62,6 +62,8 @@ class RemoteUserRepository @Inject constructor(
             Result.success(UserInfo.fromUser(currentSession).copy(imageProfile = imgByteArray))
         } catch (e: AppwriteException) {
             Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

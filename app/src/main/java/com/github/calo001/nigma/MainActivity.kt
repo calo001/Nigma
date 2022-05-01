@@ -26,6 +26,7 @@ import com.github.calo001.nigma.view.Screen
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
@@ -33,6 +34,7 @@ import com.github.calo001.nigma.router.shouldShowAddFab
 import com.github.calo001.nigma.ui.basic.ScaffoldOver
 import com.github.calo001.nigma.viewModel.AddPuzzleStatus
 import com.github.calo001.nigma.viewModel.MainViewModel
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -59,6 +61,7 @@ class MainActivity : ComponentActivity() {
             val keyboardController = LocalSoftwareKeyboardController.current
 
             NigmaTheme {
+                SystemUIColors()
                 ScaffoldOver(
                     bottomBar = {
                         navController.addOnDestinationChangedListener { controller, destination, args ->
@@ -159,6 +162,34 @@ class MainActivity : ComponentActivity() {
                     }
                 )
             }
+        }
+    }
+
+    @Composable
+    private fun SystemUIColors() {
+        val systemUiController = rememberSystemUiController()
+        val useDarkIcons = MaterialTheme.colors.isLight
+        val barColor = MaterialTheme.colors.background
+
+        SideEffect {
+            // Update all of the system bar colors to be transparent, and use
+            // dark icons if we're in light theme
+            systemUiController.setSystemBarsColor(
+                color = barColor,
+                darkIcons = useDarkIcons
+            )
+
+            systemUiController.setStatusBarColor(
+                color = barColor,
+                darkIcons = useDarkIcons
+            )
+
+            systemUiController.setNavigationBarColor(
+                color = barColor,
+                darkIcons = useDarkIcons
+            )
+
+            // setStatusBarsColor() and setNavigationBarColor() also exist
         }
     }
 }

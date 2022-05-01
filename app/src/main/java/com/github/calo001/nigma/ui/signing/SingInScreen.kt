@@ -7,6 +7,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
@@ -26,8 +28,8 @@ fun SingInScreen(
     onSignInRequest: (Email, Password) -> Unit,
     status: SessionStatus,
 ) {
-    var email by remember { mutableStateOf("calo_lrc@hotmail.com") }
-    var password by remember { mutableStateOf("abcABC123") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var showEmailError by remember { mutableStateOf(false) }
     var showPasswordError by remember { mutableStateOf(false) }
 
@@ -59,6 +61,7 @@ fun SingInScreen(
                 value = password,
                 onValueChange = { password = it },
                 isError = showPasswordError,
+                visualTransformation = PasswordVisualTransformation(),
                 label = {
                     Text(text = "Password")
                 },

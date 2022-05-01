@@ -10,10 +10,15 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.github.calo001.nigma.R
 import com.github.calo001.nigma.ui.basic.PuzzleItem
 import com.github.calo001.nigma.ui.model.PuzzleView
 import com.github.calo001.nigma.ui.states.PuzzleListState
@@ -55,13 +60,37 @@ fun MainScreen(
         }
         is PuzzleListState.Success -> {
             val list = puzzleListState.list.filterNot { it.resolvedBy.contains(userId) }
-            PuzzlesListContent(
-                username = username,
-                puzzleList = list,
-                onClickPuzzle = onClickPuzzle,
-                state = state,
-            )
+            if (list.isNotEmpty()) {
+                PuzzlesListContent(
+                    username = username,
+                    puzzleList = list,
+                    onClickPuzzle = onClickPuzzle,
+                    state = state,
+                )
+            } else {
+                EmptyPuzzleList()
+            }
         }
+    }
+}
+
+@Composable
+fun EmptyPuzzleList() {
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ufo))
+        LottieAnimation(
+            composition = composition,
+            modifier = Modifier.size(250.dp),
+            iterations = Int.MAX_VALUE,
+        )
+        Text(
+            text = "There are no puzzles, be the first on creating one!",
+            style = MaterialTheme.typography.subtitle2
+        )
     }
 }
 
@@ -90,7 +119,7 @@ private fun PuzzlesListContent(
             ) {
                 PuzzleItem(
                     puzzle = puzzleList[index],
-                    onClickPuzzle = { onClickPuzzle(puzzleList[index]) },
+                    onClickPuzzle = { onClickPuzzle(it) },
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
