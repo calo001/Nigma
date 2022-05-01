@@ -19,7 +19,7 @@ sealed interface SessionStatus {
     class SessionStarted(val user: UserInfo): SessionStatus
     class UpdatingSession(val user: UserInfo?): SessionStatus
     object LoggedOut: SessionStatus
-    class Error(val error: Throwable): SessionStatus
+    class Error(val email: String, val password: String, val error: Throwable): SessionStatus
 }
 
 sealed interface AddPuzzleStatus {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -27,9 +28,11 @@ fun SingInScreen(
     onNavigate: (Screen) -> Unit,
     onSignInRequest: (Email, Password) -> Unit,
     status: SessionStatus,
+    email: String,
+    password: String,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     var showEmailError by remember { mutableStateOf(false) }
     var showPasswordError by remember { mutableStateOf(false) }
 
@@ -50,7 +53,7 @@ fun SingInScreen(
         Column {
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { onEmailChange(it) },
                 isError = showEmailError,
                 label = {
                     Text(text = "Email")
@@ -59,7 +62,7 @@ fun SingInScreen(
             )
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { onPasswordChange(it) },
                 isError = showPasswordError,
                 visualTransformation = PasswordVisualTransformation(),
                 label = {
@@ -120,6 +123,6 @@ fun SingInScreen(
 @Composable
 fun SingingScreenPreview() {
     NigmaTheme {
-        SingInScreen(Modifier, { }, { _, _ ->}, SessionStatus.Idle)
+        SingInScreen(Modifier, { }, { _, _ ->}, SessionStatus.Idle, "", "", {}, {})
     }
 }

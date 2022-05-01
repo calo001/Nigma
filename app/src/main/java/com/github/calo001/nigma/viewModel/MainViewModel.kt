@@ -147,7 +147,9 @@ class MainViewModel @Inject constructor(
         when {
             response.isFailure -> {
                 _sessionStatus.tryEmit(SessionStatus.Error(
-                    response.exceptionOrNull() ?: NullPointerException()
+                    email = email,
+                    password = password,
+                    error = response.exceptionOrNull() ?: NullPointerException()
                     )
                 )
                 _snackErrorMessage.tryEmit(
@@ -170,7 +172,9 @@ class MainViewModel @Inject constructor(
                     _sessionStatus.tryEmit(SessionStatus.SessionStarted(user))
                 } ?: run {
                     _sessionStatus.tryEmit(SessionStatus.Error(
-                        response.exceptionOrNull() ?: NullPointerException()
+                        email = "",
+                        password = "",
+                        error = response.exceptionOrNull() ?: NullPointerException()
                     ))
                     if(showMessageError) {
                         _snackErrorMessage.tryEmit(
@@ -181,7 +185,9 @@ class MainViewModel @Inject constructor(
             }
             response.isFailure -> {
                 _sessionStatus.tryEmit(SessionStatus.Error(
-                    response.exceptionOrNull() ?: NullPointerException()
+                    email = "",
+                    password = "",
+                    error = response.exceptionOrNull() ?: NullPointerException()
                 ))
                 if(showMessageError) {
                     _snackErrorMessage.tryEmit(

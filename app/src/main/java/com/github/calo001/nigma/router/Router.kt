@@ -9,6 +9,7 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -120,6 +121,8 @@ fun Router(
             popExitTransition = defaultPopExit,
         ) {
             val status by viewModel.sessionStatus.collectAsState()
+            var email by rememberSaveable { mutableStateOf("") }
+            var password by rememberSaveable { mutableStateOf("") }
 
             LaunchedEffect(Unit) {
                 viewModel.getCurrentSession()
@@ -141,6 +144,10 @@ fun Router(
                         onNavigate = onNavigate,
                         status = status,
                         modifier = Modifier.padding(16.dp),
+                        email = email,
+                        password = password,
+                        onEmailChange = { email = it },
+                        onPasswordChange = { password = it },
                         onSignInRequest = { email, password ->
                             viewModel.login(email, password)
                         }
