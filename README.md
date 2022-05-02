@@ -16,7 +16,7 @@ The Nigma App is a puzzle game created with Jetpack compose and bootsted with Ap
 
 ## Build by your own
 
-* Install AppWrite by following the instructions ![here](https://appwrite.io/docs/installation).
+* Install AppWrite by following the instructions [here](https://appwrite.io/docs/installation).
 * Create your user account.
 * Create a project called 'nigma-app'
 * Create a collection called 'puzzle-collection'.
