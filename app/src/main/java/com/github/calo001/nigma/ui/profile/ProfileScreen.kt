@@ -30,6 +30,7 @@ import com.github.calo001.nigma.repository.model.UserInfo
 import com.github.calo001.nigma.ui.add.EditableTextField
 import com.github.calo001.nigma.ui.basic.ProfileUserImage
 import com.github.calo001.nigma.ui.model.PuzzleView
+import com.github.calo001.nigma.ui.theme.NigmaTheme
 import okhttp3.internal.EMPTY_BYTE_ARRAY
 import java.nio.ByteBuffer
 
@@ -151,14 +152,16 @@ fun LogoutButton(onLogout: () -> Unit) {
 @Preview(showSystemUi = true)
 @Composable
 fun ProfileScreenPreview() {
-    ProfileScreen(
-        onLogout = {},
-        sessionInfo = UserInfo("", "", "", ByteArray(0), ""),
-        onImageCaptured = {},
-        showLoading = false,
-        onUsernameChanged = { username ->
+    NigmaTheme {
+        ProfileScreen(
+            onLogout = {},
+            sessionInfo = UserInfo("", "email@mail.com", "Tomas", ByteArray(0), ""),
+            onImageCaptured = {},
+            showLoading = false,
+            onUsernameChanged = { username ->
 
-        },
-        list = emptyList(),
-    )
+            },
+            list = emptyList(),
+        )
+    }
 }
